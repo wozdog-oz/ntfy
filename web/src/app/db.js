@@ -9,7 +9,10 @@ import session from "./Session";
 
 const createDatabase = (username) => {
   const dbName = username ? `ntfy-${username}` : "ntfy"; // IndexedDB database is based on the logged-in user
-  const db = new Dexie(dbName);
+  // cache: "disabled" -- Dexie's liveQuery cache is only invalidated by writes it hears about. On iOS the
+  // PWA is suspended while the service worker stores web push messages, so the cache stays stale and a
+  // re-query on resume returns the old list. Always read from IndexedDB instead.
+  const db = new Dexie(dbName, { cache: "disabled" });
 
   db.version(3).stores({
     subscriptions: "&id,baseUrl,[baseUrl+mutedUntil]",

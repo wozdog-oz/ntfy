@@ -251,7 +251,15 @@ export const useForegroundRefreshKey = () => {
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    const bump = () => setRefreshKey((prev) => prev + 1);
+    let lastPoll = 0;
+    const bump = () => {
+      setRefreshKey((prev) => prev + 1);
+      // Safety net in case the service worker failed to store the message: fetch anything new from the server
+      if (Date.now() - lastPoll > 5000) {
+        lastPoll = Date.now();
+        poller.pollAll();
+      }
+    };
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         bump();

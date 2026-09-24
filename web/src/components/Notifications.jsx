@@ -25,7 +25,17 @@ import { Check as CheckIcon, Copy as CopyIcon, EllipsisVertical as MoreVertIcon,
 import InfiniteScroll from "react-infinite-scroll-component";
 import { Trans, useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
-import { copyToClipboard, formatBytes, formatDateTime, maybeActionErrors, openUrl, shortUrl, topicUrl, unmatchedTags } from "../app/utils";
+import {
+  copyToClipboard,
+  formatBytes,
+  formatDateTime,
+  maybeActionErrors,
+  openUrl,
+  shortUrl,
+  topicDisplayName,
+  topicUrl,
+  unmatchedTags,
+} from "../app/utils";
 import { ACTION_BROADCAST, ACTION_COPY, ACTION_HTTP, ACTION_VIEW } from "../app/actions";
 import { formatMessage, formatTitle, isImage } from "../app/notificationUtils";
 import { LightboxBackdrop, Paragraph, VerticallyCenteredContainer } from "./styles";
@@ -73,7 +83,8 @@ const AllSubscriptionsList = (props) => {
   if (notifications.length === 0) {
     return <NoNotificationsWithoutSubscription subscriptions={subscriptions} />;
   }
-  return <NotificationList key="all" notifications={notifications} messageBar={false} />;
+  const topicNames = Object.fromEntries(subscriptions.map((s) => [s.id, topicDisplayName(s)]));
+  return <NotificationList key="all" notifications={notifications} messageBar={false} topicNames={topicNames} />;
 };
 
 const SingleSubscriptionList = (props) => {
@@ -131,7 +142,12 @@ const NotificationList = (props) => {
       >
         <Stack spacing={1.5}>
           {notifications.slice(0, count).map((notification) => (
-            <NotificationItem key={notification.id} notification={notification} onShowSnack={() => setSnackOpen(true)} />
+            <NotificationItem
+              key={notification.id}
+              notification={notification}
+              topicName={props.topicNames?.[notification.subscriptionId]}
+              onShowSnack={() => setSnackOpen(true)}
+            />
           ))}
           <Snackbar
             open={snackOpen}
@@ -223,6 +239,23 @@ const NotificationItem = (props) => {
                 aria-label={t("notifications_new_indicator")}
                 sx={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: "primary.main", flexShrink: 0, marginRight: 0.25 }}
               />
+            )}
+            {props.topicName && (
+              <Box
+                component="span"
+                sx={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  lineHeight: "20px",
+                  px: 1,
+                  borderRadius: "6px",
+                  color: "text.primary",
+                  backgroundColor: (theme) => (theme.palette.mode === "light" ? "rgba(120, 120, 128, 0.12)" : "rgba(120, 120, 128, 0.24)"),
+                  marginRight: 0.5,
+                }}
+              >
+                {props.topicName}
+              </Box>
             )}
             {date}
             {[1, 2, 4, 5].includes(notification.priority) && (
