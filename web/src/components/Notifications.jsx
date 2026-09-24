@@ -47,6 +47,7 @@ import priority4 from "../img/priority-4.svg";
 import priority5 from "../img/priority-5.svg";
 import logoOutline from "../img/ntfy-outline.svg";
 import AttachmentIcon from "./AttachmentIcon";
+import SwipeToDelete from "./SwipeToDelete";
 import { useAutoSubscribe } from "./hooks";
 import { usePrefCache } from "./PrefCache";
 
@@ -229,136 +230,139 @@ const NotificationItem = (props) => {
   const showActions = hasAttachmentActions || hasClickAction || hasUserActions;
 
   return (
-    <Card role="listitem" aria-label={t("notifications_list_item")}>
-      <CardContent>
-        <Box sx={{ display: "flex", alignItems: "center", marginTop: -0.5 }}>
-          <Typography sx={{ fontSize: 13, flexGrow: 1, display: "flex", alignItems: "center", gap: 0.5, color: "text.secondary" }}>
-            {notification.new === 1 && (
-              <Box
-                component="span"
-                aria-label={t("notifications_new_indicator")}
-                sx={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: "primary.main", flexShrink: 0, marginRight: 0.25 }}
-              />
-            )}
-            {props.topicName && (
-              <Box
-                component="span"
-                sx={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  lineHeight: "20px",
-                  px: 1,
-                  borderRadius: "6px",
-                  color: "text.primary",
-                  backgroundColor: (theme) => (theme.palette.mode === "light" ? "rgba(120, 120, 128, 0.12)" : "rgba(120, 120, 128, 0.24)"),
-                  marginRight: 0.5,
-                }}
-              >
-                {props.topicName}
-              </Box>
-            )}
-            {date}
-            {[1, 2, 4, 5].includes(notification.priority) && (
-              <img
-                src={priorityFiles[notification.priority]}
-                alt={t("notifications_priority_x", {
-                  priority: notification.priority,
-                })}
-                style={{ height: 20 }}
-              />
-            )}
-          </Typography>
-          <IconButton
-            onClick={(ev) => setMenuAnchorEl(ev.currentTarget)}
-            sx={{ marginRight: -1, color: "text.secondary" }}
-            aria-label={t("action_bar_toggle_action_menu")}
-          >
-            <MoreVertIcon size={20} />
-          </IconButton>
-          <Menu
-            anchorEl={menuAnchorEl}
-            open={Boolean(menuAnchorEl)}
-            onClose={() => setMenuAnchorEl(null)}
-            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-            transformOrigin={{ vertical: "top", horizontal: "right" }}
-          >
-            {notification.new === 1 && (
-              <MenuItem onClick={handleMenuAction(handleMarkRead)}>
+    <SwipeToDelete onDelete={handleDelete} label={t("notifications_delete")}>
+      <Card role="listitem" aria-label={t("notifications_list_item")}>
+        <CardContent>
+          <Box sx={{ display: "flex", alignItems: "center", marginTop: -0.5 }}>
+            <Typography sx={{ fontSize: 13, flexGrow: 1, display: "flex", alignItems: "center", gap: 0.5, color: "text.secondary" }}>
+              {notification.new === 1 && (
+                <Box
+                  component="span"
+                  aria-label={t("notifications_new_indicator")}
+                  sx={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: "primary.main", flexShrink: 0, marginRight: 0.25 }}
+                />
+              )}
+              {props.topicName && (
+                <Box
+                  component="span"
+                  sx={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    lineHeight: "20px",
+                    px: 1,
+                    borderRadius: "6px",
+                    color: "text.primary",
+                    backgroundColor: (theme) =>
+                      theme.palette.mode === "light" ? "rgba(120, 120, 128, 0.12)" : "rgba(120, 120, 128, 0.24)",
+                    marginRight: 0.5,
+                  }}
+                >
+                  {props.topicName}
+                </Box>
+              )}
+              {date}
+              {[1, 2, 4, 5].includes(notification.priority) && (
+                <img
+                  src={priorityFiles[notification.priority]}
+                  alt={t("notifications_priority_x", {
+                    priority: notification.priority,
+                  })}
+                  style={{ height: 20 }}
+                />
+              )}
+            </Typography>
+            <IconButton
+              onClick={(ev) => setMenuAnchorEl(ev.currentTarget)}
+              sx={{ marginRight: -1, color: "text.secondary" }}
+              aria-label={t("action_bar_toggle_action_menu")}
+            >
+              <MoreVertIcon size={20} />
+            </IconButton>
+            <Menu
+              anchorEl={menuAnchorEl}
+              open={Boolean(menuAnchorEl)}
+              onClose={() => setMenuAnchorEl(null)}
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              transformOrigin={{ vertical: "top", horizontal: "right" }}
+            >
+              {notification.new === 1 && (
+                <MenuItem onClick={handleMenuAction(handleMarkRead)}>
+                  <ListItemIcon>
+                    <CheckIcon size={18} />
+                  </ListItemIcon>
+                  {t("notifications_mark_read")}
+                </MenuItem>
+              )}
+              <MenuItem onClick={handleMenuAction(() => handleCopy(formatMessage(notification)))}>
                 <ListItemIcon>
-                  <CheckIcon size={18} />
+                  <CopyIcon size={18} />
                 </ListItemIcon>
-                {t("notifications_mark_read")}
+                {t("common_copy_to_clipboard")}
               </MenuItem>
+              <MenuItem onClick={handleMenuAction(handleDelete)} sx={{ color: "error.main" }}>
+                <ListItemIcon sx={{ color: "error.main" }}>
+                  <DeleteIcon size={18} />
+                </ListItemIcon>
+                {t("notifications_delete")}
+              </MenuItem>
+            </Menu>
+          </Box>
+          {notification.title && (
+            <Typography
+              variant="h5"
+              component="div"
+              role="rowheader"
+              sx={{ fontSize: "1rem", lineHeight: 1.35, marginTop: 0.25, marginBottom: 0.25 }}
+            >
+              {formatTitle(notification)}
+            </Typography>
+          )}
+          <Typography variant="body1" sx={{ fontSize: "0.9375rem", lineHeight: 1.4, whiteSpace: "pre-line", overflowX: "auto" }}>
+            <NotificationBody notification={notification} />
+            {maybeActionErrors(notification)}
+          </Typography>
+          {attachment && <Attachment attachment={attachment} />}
+          {tags && (
+            <Typography sx={{ fontSize: 13, color: "text.secondary", marginTop: 0.5 }}>
+              {t("notifications_tags")}: {tags}
+            </Typography>
+          )}
+        </CardContent>
+        {showActions && (
+          <CardActions sx={{ paddingTop: 0 }}>
+            {hasAttachmentActions && (
+              <>
+                <Tooltip title={t("notifications_attachment_copy_url_title")}>
+                  <Button onClick={() => handleCopy(attachment.url)}>{t("notifications_attachment_copy_url_button")}</Button>
+                </Tooltip>
+                <Tooltip
+                  title={t("notifications_attachment_open_title", {
+                    url: attachment.url,
+                  })}
+                >
+                  <Button onClick={() => openUrl(attachment.url)}>{t("notifications_attachment_open_button")}</Button>
+                </Tooltip>
+              </>
             )}
-            <MenuItem onClick={handleMenuAction(() => handleCopy(formatMessage(notification)))}>
-              <ListItemIcon>
-                <CopyIcon size={18} />
-              </ListItemIcon>
-              {t("common_copy_to_clipboard")}
-            </MenuItem>
-            <MenuItem onClick={handleMenuAction(handleDelete)} sx={{ color: "error.main" }}>
-              <ListItemIcon sx={{ color: "error.main" }}>
-                <DeleteIcon size={18} />
-              </ListItemIcon>
-              {t("notifications_delete")}
-            </MenuItem>
-          </Menu>
-        </Box>
-        {notification.title && (
-          <Typography
-            variant="h5"
-            component="div"
-            role="rowheader"
-            sx={{ fontSize: "1rem", lineHeight: 1.35, marginTop: 0.25, marginBottom: 0.25 }}
-          >
-            {formatTitle(notification)}
-          </Typography>
+            {hasClickAction && (
+              <>
+                <Tooltip title={t("notifications_click_copy_url_title")}>
+                  <Button onClick={() => handleCopy(notification.click)}>{t("notifications_click_copy_url_button")}</Button>
+                </Tooltip>
+                <Tooltip
+                  title={t("notifications_actions_open_url_title", {
+                    url: notification.click,
+                  })}
+                >
+                  <Button onClick={() => openUrl(notification.click)}>{t("notifications_click_open_button")}</Button>
+                </Tooltip>
+              </>
+            )}
+            {hasUserActions && <UserActions notification={notification} onShowSnack={props.onShowSnack} />}
+          </CardActions>
         )}
-        <Typography variant="body1" sx={{ fontSize: "0.9375rem", lineHeight: 1.4, whiteSpace: "pre-line", overflowX: "auto" }}>
-          <NotificationBody notification={notification} />
-          {maybeActionErrors(notification)}
-        </Typography>
-        {attachment && <Attachment attachment={attachment} />}
-        {tags && (
-          <Typography sx={{ fontSize: 13, color: "text.secondary", marginTop: 0.5 }}>
-            {t("notifications_tags")}: {tags}
-          </Typography>
-        )}
-      </CardContent>
-      {showActions && (
-        <CardActions sx={{ paddingTop: 0 }}>
-          {hasAttachmentActions && (
-            <>
-              <Tooltip title={t("notifications_attachment_copy_url_title")}>
-                <Button onClick={() => handleCopy(attachment.url)}>{t("notifications_attachment_copy_url_button")}</Button>
-              </Tooltip>
-              <Tooltip
-                title={t("notifications_attachment_open_title", {
-                  url: attachment.url,
-                })}
-              >
-                <Button onClick={() => openUrl(attachment.url)}>{t("notifications_attachment_open_button")}</Button>
-              </Tooltip>
-            </>
-          )}
-          {hasClickAction && (
-            <>
-              <Tooltip title={t("notifications_click_copy_url_title")}>
-                <Button onClick={() => handleCopy(notification.click)}>{t("notifications_click_copy_url_button")}</Button>
-              </Tooltip>
-              <Tooltip
-                title={t("notifications_actions_open_url_title", {
-                  url: notification.click,
-                })}
-              >
-                <Button onClick={() => openUrl(notification.click)}>{t("notifications_click_open_button")}</Button>
-              </Tooltip>
-            </>
-          )}
-          {hasUserActions && <UserActions notification={notification} onShowSnack={props.onShowSnack} />}
-        </CardActions>
-      )}
-    </Card>
+      </Card>
+    </SwipeToDelete>
   );
 };
 

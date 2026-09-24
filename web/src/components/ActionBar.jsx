@@ -1,4 +1,19 @@
-import { AppBar, Toolbar, IconButton, Typography, Box, MenuItem, Button, Divider, ListItemIcon } from "@mui/material";
+import {
+  AppBar,
+  Toolbar,
+  IconButton,
+  Typography,
+  Box,
+  MenuItem,
+  Button,
+  Divider,
+  ListItemIcon,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+} from "@mui/material";
 import {
   Menu as MenuIcon,
   EllipsisVertical as MoreVertIcon,
@@ -9,6 +24,7 @@ import {
   LogOut as Logout,
   User as Person,
   Settings,
+  Trash2 as ClearIcon,
 } from "lucide-react";
 import * as React from "react";
 import { useState } from "react";
@@ -77,6 +93,7 @@ const ActionBar = (props) => {
         <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, color: "text.primary" }}>
           {title}
         </Typography>
+        {(props.selected || location.pathname === routes.app) && <ClearListIcon subscription={props.selected} />}
         {isLaunchedPWA && <ReloadIcon />}
         {props.selected && <SettingsIcons subscription={props.selected} onUnsubscribe={props.onUnsubscribe} />}
         <ProfileIcon />
@@ -110,6 +127,42 @@ const SettingsIcons = (props) => {
         <MoreVertIcon size={22} />
       </IconButton>
       <SubscriptionPopup subscription={subscription} anchor={anchorEl} placement="right" onClose={() => setAnchorEl(null)} />
+    </>
+  );
+};
+
+// ClearListIcon deletes every notification in the current list (one topic, or all topics), after confirming.
+const ClearListIcon = ({ subscription }) => {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+
+  const handleClear = async () => {
+    setOpen(false);
+    const subscriptions = subscription ? [subscription] : await subscriptionManager.all();
+    await Promise.all(subscriptions.map((s) => subscriptionManager.deleteNotifications(s.id)));
+  };
+
+  return (
+    <>
+      <IconButton color="primary" size="large" edge="end" onClick={() => setOpen(true)} aria-label={t("action_bar_clear_notifications")}>
+        <ClearIcon size={21} />
+      </IconButton>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>{t("action_bar_clear_notifications")}?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {subscription
+              ? `This removes every notification in "${topicDisplayName(subscription)}" from this device.`
+              : "This removes every notification in all topics from this device."}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpen(false)}>{t("common_cancel")}</Button>
+          <Button color="error" onClick={handleClear}>
+            {t("notifications_delete")}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
