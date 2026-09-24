@@ -252,8 +252,9 @@ export const useForegroundRefreshKey = () => {
 
   useEffect(() => {
     let lastPoll = 0;
-    const bump = () => {
-      setRefreshKey((prev) => prev + 1);
+    const refresh = () => setRefreshKey((prev) => prev + 1);
+    const refreshAndPoll = () => {
+      refresh();
       // Safety net in case the service worker failed to store the message: fetch anything new from the server
       if (Date.now() - lastPoll > 5000) {
         lastPoll = Date.now();
@@ -262,20 +263,34 @@ export const useForegroundRefreshKey = () => {
     };
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        bump();
+        refreshAndPoll();
       }
     };
+    const onServiceWorkerMessage = (ev) => {
+      if (ev.data?.type === "ntfy-refresh") {
+        refreshAndPoll();
+      }
+    };
+    // Last resort for missed events: re-read IndexedDB (local only, no network) while the app is visible
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        refresh();
+      }
+    }, 10000);
 
     document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener("pageshow", bump);
-    window.addEventListener("focus", bump);
-    webPushBroadcastChannel.addEventListener("message", bump);
+    window.addEventListener("pageshow", refreshAndPoll);
+    window.addEventListener("focus", refreshAndPoll);
+    webPushBroadcastChannel.addEventListener("message", refreshAndPoll);
+    navigator.serviceWorker?.addEventListener("message", onServiceWorkerMessage);
 
     return () => {
+      clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener("pageshow", bump);
-      window.removeEventListener("focus", bump);
-      webPushBroadcastChannel.removeEventListener("message", bump);
+      window.removeEventListener("pageshow", refreshAndPoll);
+      window.removeEventListener("focus", refreshAndPoll);
+      webPushBroadcastChannel.removeEventListener("message", refreshAndPoll);
+      navigator.serviceWorker?.removeEventListener("message", onServiceWorkerMessage);
     };
   }, []);
 

@@ -29,6 +29,11 @@ import {
 
 const broadcastChannel = new BroadcastChannel("web-push-broadcast");
 
+const notifyClientsToRefresh = async () => {
+  const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  windows.forEach((client) => client.postMessage({ type: "ntfy-refresh" }));
+};
+
 /**
  * Handle a received web push message and show notification.
  *
@@ -88,6 +93,9 @@ const handlePushMessage = async (data) => {
 
   // Broadcast the message to potentially play a sound
   broadcastChannel.postMessage(message);
+
+  // Tell open windows to re-read the list (BroadcastChannel is unreliable for suspended iOS PWAs)
+  await notifyClientsToRefresh();
 
   await maybeExtendToken();
 };
@@ -287,6 +295,7 @@ const handlePush = async (data) => {
 const handleClick = async (event) => {
   const t = await initI18n();
 
+  await notifyClientsToRefresh();
   const clients = await self.clients.matchAll({ type: "window" });
   const rootUrl = new URL(self.location.origin);
   const rootClient = clients.find((client) => client.url === rootUrl.toString());
