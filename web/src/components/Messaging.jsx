@@ -141,7 +141,7 @@ const MessageBar = (props) => {
           width: 34,
           height: 34,
           borderRadius: "50%",
-          color: "#fff",
+          color: "primary.contrastText",
           backgroundColor: "primary.main",
           "&:hover": { backgroundColor: "primary.dark" },
         }}

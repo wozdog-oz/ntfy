@@ -156,7 +156,7 @@ const autolink = (s) => {
   const parts = s.split(/(\bhttps?:\/\/[-A-Z0-9+\u0026\u2019@#/%?=()~_|!:,.;]*[-A-Z0-9+\u0026@#/%=~()_|]\b)/gi);
   for (let i = 1; i < parts.length; i += 2) {
     parts[i] = (
-      <Link key={i} href={parts[i]} underline="hover" target="_blank" rel="noreferrer">
+      <Link key={i} href={parts[i]} underline="always" target="_blank" rel="noreferrer">
         {shortUrl(parts[i])}
       </Link>
     );
@@ -216,7 +216,7 @@ const NotificationItem = (props) => {
     <Card role="listitem" aria-label={t("notifications_list_item")}>
       <CardContent>
         <Box sx={{ display: "flex", alignItems: "center", marginTop: -0.5 }}>
-          <Typography sx={{ fontSize: 14, flexGrow: 1, display: "flex", alignItems: "center", gap: 0.5, color: "text.secondary" }}>
+          <Typography sx={{ fontSize: 13, flexGrow: 1, display: "flex", alignItems: "center", gap: 0.5, color: "text.secondary" }}>
             {notification.new === 1 && (
               <Box
                 component="span"
@@ -272,17 +272,22 @@ const NotificationItem = (props) => {
           </Menu>
         </Box>
         {notification.title && (
-          <Typography variant="h5" component="div" role="rowheader" sx={{ marginTop: 0.25, marginBottom: 0.5 }}>
+          <Typography
+            variant="h5"
+            component="div"
+            role="rowheader"
+            sx={{ fontSize: "1rem", lineHeight: 1.35, marginTop: 0.25, marginBottom: 0.25 }}
+          >
             {formatTitle(notification)}
           </Typography>
         )}
-        <Typography variant="body1" sx={{ whiteSpace: "pre-line", overflowX: "auto" }}>
+        <Typography variant="body1" sx={{ fontSize: "0.9375rem", lineHeight: 1.4, whiteSpace: "pre-line", overflowX: "auto" }}>
           <NotificationBody notification={notification} />
           {maybeActionErrors(notification)}
         </Typography>
         {attachment && <Attachment attachment={attachment} />}
         {tags && (
-          <Typography sx={{ fontSize: 14, color: "text.secondary", marginTop: 0.5 }}>
+          <Typography sx={{ fontSize: 13, color: "text.secondary", marginTop: 0.5 }}>
             {t("notifications_tags")}: {tags}
           </Typography>
         )}

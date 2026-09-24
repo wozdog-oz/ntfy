@@ -15,6 +15,7 @@ const fontFamily = [
 export const iosColors = {
   light: {
     blue: "#007AFF",
+    accent: "#3A3A3C", // dark grey used for icons, buttons and links instead of blue
     red: "#FF3B30",
     green: "#34C759",
     orange: "#FF9500",
@@ -28,6 +29,7 @@ export const iosColors = {
   },
   dark: {
     blue: "#0A84FF",
+    accent: "#D1D1D6",
     red: "#FF453A",
     green: "#30D158",
     orange: "#FF9F0A",
@@ -56,7 +58,8 @@ const makeTheme = (mode) => {
     },
     palette: {
       mode,
-      primary: { main: c.blue },
+      primary: { main: c.accent },
+      info: { main: c.blue },
       secondary: { main: c.green },
       error: { main: c.red },
       success: { main: c.green },
@@ -158,18 +161,18 @@ const makeTheme = (mode) => {
             borderRadius: 10,
             margin: "1px 8px",
             "&.Mui-selected": {
-              backgroundColor: c.blue,
-              color: "#fff",
-              "& .MuiListItemIcon-root": { color: "#fff" },
-              "& .MuiListItemText-secondary": { color: "rgba(255, 255, 255, 0.75)" },
+              backgroundColor: c.fill,
+              color: c.label,
+              "& .MuiListItemIcon-root": { color: c.label },
+              "& .MuiListItemText-primary": { fontWeight: 600 },
             },
-            "&.Mui-selected:hover": { backgroundColor: c.blue },
+            "&.Mui-selected:hover": { backgroundColor: c.fill },
           },
         },
       },
       MuiListItemIcon: {
         styleOverrides: {
-          root: { minWidth: "36px", color: c.blue },
+          root: { minWidth: "36px", color: c.accent },
         },
       },
       MuiDialog: {
