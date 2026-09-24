@@ -1,8 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { Paper, IconButton, TextField, Portal, Snackbar } from "@mui/material";
-import SendIcon from "@mui/icons-material/Send";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import { ArrowUp as SendIcon, ChevronUp as KeyboardArrowUpIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import PublishDialog from "./PublishDialog";
 import api from "../app/Api";
@@ -88,29 +87,43 @@ const MessageBar = (props) => {
 
   return (
     <Paper
-      elevation={3}
+      elevation={0}
+      square
       sx={{
         display: "flex",
+        alignItems: "center",
+        gap: 1,
         position: "fixed",
         bottom: 0,
         right: 0,
-        padding: 2,
+        padding: "8px 12px calc(8px + env(safe-area-inset-bottom))",
         width: { xs: "100%", sm: `calc(100% - ${Navigation.width}px)` },
-        backgroundColor: (theme) => (theme.palette.mode === "light" ? theme.palette.grey[100] : theme.palette.grey[900]),
+        backgroundColor: (theme) => (theme.palette.mode === "light" ? "rgba(249, 249, 249, 0.85)" : "rgba(28, 28, 30, 0.85)"),
+        backdropFilter: "saturate(180%) blur(20px)",
+        WebkitBackdropFilter: "saturate(180%) blur(20px)",
+        borderTop: (theme) => `0.5px solid ${theme.palette.divider}`,
       }}
     >
-      <IconButton color="inherit" size="large" edge="start" onClick={props.onOpenDialogClick} aria-label={t("message_bar_show_dialog")}>
-        <KeyboardArrowUpIcon />
+      <IconButton color="primary" edge="start" onClick={props.onOpenDialogClick} aria-label={t("message_bar_show_dialog")}>
+        <KeyboardArrowUpIcon size={24} />
       </IconButton>
       <TextField
         autoFocus
-        margin="dense"
         placeholder={t("message_bar_type_message")}
         aria-label={t("message_bar_type_message")}
         role="textbox"
         type="text"
         fullWidth
         variant="standard"
+        slotProps={{ input: { disableUnderline: true } }}
+        sx={{
+          "& .MuiInputBase-root": {
+            borderRadius: "18px",
+            border: (theme) => `0.5px solid ${theme.palette.divider}`,
+            backgroundColor: "background.paper",
+            padding: "5px 14px",
+          },
+        }}
         value={props.message}
         onChange={(ev) => props.onMessageChange(ev.target.value)}
         onKeyPress={(ev) => {
@@ -121,8 +134,19 @@ const MessageBar = (props) => {
         }}
         onPaste={handlePaste}
       />
-      <IconButton color="inherit" size="large" edge="end" onClick={handleSendClick} aria-label={t("message_bar_publish")}>
-        <SendIcon />
+      <IconButton
+        onClick={handleSendClick}
+        aria-label={t("message_bar_publish")}
+        sx={{
+          width: 34,
+          height: 34,
+          borderRadius: "50%",
+          color: "#fff",
+          backgroundColor: "primary.main",
+          "&:hover": { backgroundColor: "primary.dark" },
+        }}
+      >
+        <SendIcon size={20} strokeWidth={2.5} />
       </IconButton>
       <Portal>
         <Snackbar

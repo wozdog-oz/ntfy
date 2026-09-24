@@ -241,6 +241,39 @@ export const useWebPushTopics = () => {
   return topics;
 };
 
+/**
+ * Returns a counter that increments whenever the app returns to the foreground, or the service worker
+ * stores a web push message. Pass it as a useLiveQuery dependency to force a re-read of IndexedDB:
+ * on iOS the PWA is suspended in the background and misses Dexie's change events for rows the
+ * service worker wrote, so without this the list stays stale until a manual refresh.
+ */
+export const useForegroundRefreshKey = () => {
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const bump = () => setRefreshKey((prev) => prev + 1);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        bump();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pageshow", bump);
+    window.addEventListener("focus", bump);
+    webPushBroadcastChannel.addEventListener("message", bump);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pageshow", bump);
+      window.removeEventListener("focus", bump);
+      webPushBroadcastChannel.removeEventListener("message", bump);
+    };
+  }, []);
+
+  return refreshKey;
+};
+
 const matchMedia = window.matchMedia("(display-mode: standalone)");
 const isIOSStandalone = window.navigator.standalone === true;
 

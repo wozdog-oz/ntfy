@@ -50,8 +50,8 @@ func (s *Server) handleWebManifest(w http.ResponseWriter, _ *http.Request, _ *vi
 		Scope:           "/",
 		StartURL:        s.config.WebRoot,
 		Display:         "standalone",
-		BackgroundColor: "#ffffff",
-		ThemeColor:      "#317f6f",
+		BackgroundColor: "#f2f2f7",
+		ThemeColor:      "#f9f9f9",
 		Icons: []*webManifestIcon{
 			{SRC: "/static/images/pwa-192x192.png", Sizes: "192x192", Type: "image/png"},
 			{SRC: "/static/images/pwa-512x512.png", Sizes: "512x512", Type: "image/png"},

@@ -1,17 +1,19 @@
-import { AppBar, Toolbar, IconButton, Typography, Box, MenuItem, Button, Divider, ListItemIcon, useTheme } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
+import { AppBar, Toolbar, IconButton, Typography, Box, MenuItem, Button, Divider, ListItemIcon } from "@mui/material";
+import {
+  Menu as MenuIcon,
+  EllipsisVertical as MoreVertIcon,
+  Bell as NotificationsIcon,
+  BellOff as NotificationsOffIcon,
+  RotateCw as RefreshIcon,
+  CircleUserRound as AccountCircleIcon,
+  LogOut as Logout,
+  User as Person,
+  Settings,
+} from "lucide-react";
 import * as React from "react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import NotificationsOffIcon from "@mui/icons-material/NotificationsOff";
-import RefreshIcon from "@mui/icons-material/Refresh";
 import { useTranslation } from "react-i18next";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import Logout from "@mui/icons-material/Logout";
-import Person from "@mui/icons-material/Person";
-import Settings from "@mui/icons-material/Settings";
 import session from "../app/Session";
 import logo from "../img/ntfy.svg";
 import subscriptionManager from "../app/SubscriptionManager";
@@ -26,7 +28,6 @@ import { SubscriptionPopup } from "./SubscriptionPopup";
 import { useIsLaunchedPWA } from "./hooks";
 
 const ActionBar = (props) => {
-  const theme = useTheme();
   const { t } = useTranslation();
   const location = useLocation();
   const isLaunchedPWA = useIsLaunchedPWA();
@@ -40,21 +41,6 @@ const ActionBar = (props) => {
     title = t("action_bar_account");
   }
 
-  const getActionBarBackground = () => {
-    if (isLaunchedPWA) {
-      return "#317f6f";
-    }
-
-    switch (theme.palette.mode) {
-      case "dark":
-        return "linear-gradient(150deg, #203631 0%, #2a6e60 100%)";
-
-      case "light":
-      default:
-        return "linear-gradient(150deg, #338574 0%, #56bda8 100%)";
-    }
-  };
-
   return (
     <AppBar
       position="fixed"
@@ -66,18 +52,17 @@ const ActionBar = (props) => {
     >
       <Toolbar
         sx={{
-          pr: "24px",
-          background: getActionBarBackground(),
+          pr: { xs: "12px", sm: "24px" },
         }}
       >
         <IconButton
-          color="inherit"
+          color="primary"
           edge="start"
           aria-label={t("action_bar_show_menu")}
           onClick={props.onMobileDrawerToggle}
           sx={{ mr: 2, display: { sm: "none" } }}
         >
-          <MenuIcon />
+          <MenuIcon size={26} />
         </IconButton>
         <Box
           component="img"
@@ -89,7 +74,7 @@ const ActionBar = (props) => {
             height: "28px",
           }}
         />
-        <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+        <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, color: "text.primary" }}>
           {title}
         </Typography>
         {isLaunchedPWA && <ReloadIcon />}
@@ -112,17 +97,17 @@ const SettingsIcons = (props) => {
 
   return (
     <>
-      <IconButton color="inherit" size="large" edge="end" onClick={handleToggleMute} aria-label={t("action_bar_toggle_mute")}>
-        {subscription.mutedUntil ? <NotificationsOffIcon /> : <NotificationsIcon />}
+      <IconButton color="primary" size="large" edge="end" onClick={handleToggleMute} aria-label={t("action_bar_toggle_mute")}>
+        {subscription.mutedUntil ? <NotificationsOffIcon size={22} /> : <NotificationsIcon size={22} />}
       </IconButton>
       <IconButton
-        color="inherit"
+        color="primary"
         size="large"
         edge="end"
         onClick={(ev) => setAnchorEl(ev.currentTarget)}
         aria-label={t("action_bar_toggle_action_menu")}
       >
-        <MoreVertIcon />
+        <MoreVertIcon size={22} />
       </IconButton>
       <SubscriptionPopup subscription={subscription} anchor={anchorEl} placement="right" onClose={() => setAnchorEl(null)} />
     </>
@@ -148,8 +133,8 @@ const ReloadIcon = () => {
   };
 
   return (
-    <IconButton color="inherit" size="large" edge="end" onClick={handleReload} aria-label={t("action_bar_reload")}>
-      <RefreshIcon />
+    <IconButton color="primary" size="large" edge="end" onClick={handleReload} aria-label={t("action_bar_reload")}>
+      <RefreshIcon size={21} />
     </IconButton>
   );
 };
@@ -180,13 +165,13 @@ const ProfileIcon = () => {
   return (
     <>
       {session.exists() && (
-        <IconButton color="inherit" size="large" edge="end" onClick={handleClick} aria-label={t("action_bar_profile_title")}>
-          <AccountCircleIcon />
+        <IconButton color="primary" size="large" edge="end" onClick={handleClick} aria-label={t("action_bar_profile_title")}>
+          <AccountCircleIcon size={24} />
         </IconButton>
       )}
       {!session.exists() && config.enable_login && (
         <Button
-          color="inherit"
+          color="primary"
           variant="text"
           onClick={() => fadeNavigate(navigate, routes.login)}
           sx={{ m: 1 }}
@@ -197,7 +182,7 @@ const ProfileIcon = () => {
       )}
       {!session.exists() && config.enable_signup && (
         <Button
-          color="inherit"
+          color="primary"
           variant="outlined"
           onClick={() => fadeNavigate(navigate, routes.signup)}
           aria-label={t("action_bar_sign_up")}
@@ -208,20 +193,20 @@ const ProfileIcon = () => {
       <PopupMenu horizontal="right" anchorEl={anchorEl} open={open} onClose={handleClose}>
         <MenuItem onClick={() => navigate(routes.account)}>
           <ListItemIcon>
-            <Person />
+            <Person size={18} />
           </ListItemIcon>
           <b>{session.username()}</b>
         </MenuItem>
         <Divider />
         <MenuItem onClick={() => navigate(routes.settings)}>
           <ListItemIcon>
-            <Settings fontSize="small" />
+            <Settings size={18} />
           </ListItemIcon>
           {t("action_bar_profile_settings")}
         </MenuItem>
         <MenuItem onClick={handleLogout}>
           <ListItemIcon>
-            <Logout fontSize="small" />
+            <Logout size={18} />
           </ListItemIcon>
           {t("action_bar_profile_logout")}
         </MenuItem>

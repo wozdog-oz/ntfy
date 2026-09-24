@@ -15,11 +15,13 @@ import {
   IconButton,
   Box,
   Button,
+  ListItemIcon,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import * as React from "react";
 import { Suspense, lazy, useEffect, useMemo, useState } from "react";
-import CheckIcon from "@mui/icons-material/Check";
-import CloseIcon from "@mui/icons-material/Close";
+import { Check as CheckIcon, Copy as CopyIcon, EllipsisVertical as MoreVertIcon, Trash2 as DeleteIcon } from "lucide-react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { Trans, useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
@@ -121,11 +123,13 @@ const NotificationList = (props) => {
         role="list"
         aria-label={t("notifications_list")}
         sx={{
-          marginTop: 3,
+          marginTop: 1.5,
           marginBottom: props.messageBar ? "100px" : 3, // Hack to avoid hiding notifications behind the message bar
+          paddingLeft: { xs: 1.5, sm: 2 },
+          paddingRight: { xs: 1.5, sm: 2 },
         }}
       >
-        <Stack spacing={3}>
+        <Stack spacing={1.5}>
           {notifications.slice(0, count).map((notification) => (
             <NotificationItem key={notification.id} notification={notification} onShowSnack={() => setSnackOpen(true)} />
           ))}
@@ -197,6 +201,11 @@ const NotificationItem = (props) => {
     copyToClipboard(s);
     props.onShowSnack();
   };
+  const [menuAnchorEl, setMenuAnchorEl] = useState(null);
+  const handleMenuAction = (action) => async () => {
+    setMenuAnchorEl(null);
+    await action();
+  };
   const expired = attachment && attachment.expires && attachment.expires < Date.now() / 1000;
   const hasAttachmentActions = attachment && !expired;
   const hasClickAction = notification.click;
@@ -204,48 +213,66 @@ const NotificationItem = (props) => {
   const showActions = hasAttachmentActions || hasClickAction || hasUserActions;
 
   return (
-    <Card sx={{ padding: 1 }} role="listitem" aria-label={t("notifications_list_item")}>
+    <Card role="listitem" aria-label={t("notifications_list_item")}>
       <CardContent>
-        <Tooltip title={t("notifications_delete")} enterDelay={500}>
-          <IconButton onClick={handleDelete} sx={{ float: "right", marginRight: -1, marginTop: -1 }} aria-label={t("notifications_delete")}>
-            <CloseIcon />
+        <Box sx={{ display: "flex", alignItems: "center", marginTop: -0.5 }}>
+          <Typography sx={{ fontSize: 14, flexGrow: 1, display: "flex", alignItems: "center", gap: 0.5, color: "text.secondary" }}>
+            {notification.new === 1 && (
+              <Box
+                component="span"
+                aria-label={t("notifications_new_indicator")}
+                sx={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: "primary.main", flexShrink: 0, marginRight: 0.25 }}
+              />
+            )}
+            {date}
+            {[1, 2, 4, 5].includes(notification.priority) && (
+              <img
+                src={priorityFiles[notification.priority]}
+                alt={t("notifications_priority_x", {
+                  priority: notification.priority,
+                })}
+                style={{ height: 20 }}
+              />
+            )}
+          </Typography>
+          <IconButton
+            onClick={(ev) => setMenuAnchorEl(ev.currentTarget)}
+            sx={{ marginRight: -1, color: "text.secondary" }}
+            aria-label={t("action_bar_toggle_action_menu")}
+          >
+            <MoreVertIcon size={20} />
           </IconButton>
-        </Tooltip>
-        {notification.new === 1 && (
-          <Tooltip title={t("notifications_mark_read")} enterDelay={500}>
-            <IconButton
-              onClick={handleMarkRead}
-              sx={{ float: "right", marginRight: -0.5, marginTop: -1 }}
-              aria-label={t("notifications_mark_read")}
-            >
-              <CheckIcon />
-            </IconButton>
-          </Tooltip>
-        )}
-        <Typography sx={{ fontSize: 14 }} color="text.secondary">
-          {date}
-          {[1, 2, 4, 5].includes(notification.priority) && (
-            <img
-              src={priorityFiles[notification.priority]}
-              alt={t("notifications_priority_x", {
-                priority: notification.priority,
-              })}
-              style={{ verticalAlign: "bottom" }}
-            />
-          )}
-          {notification.new === 1 && (
-            <svg
-              style={{ width: "8px", height: "8px", marginLeft: "4px" }}
-              viewBox="0 0 100 100"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-label={t("notifications_new_indicator")}
-            >
-              <circle cx="50" cy="50" r="50" fill="#338574" />
-            </svg>
-          )}
-        </Typography>
+          <Menu
+            anchorEl={menuAnchorEl}
+            open={Boolean(menuAnchorEl)}
+            onClose={() => setMenuAnchorEl(null)}
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            transformOrigin={{ vertical: "top", horizontal: "right" }}
+          >
+            {notification.new === 1 && (
+              <MenuItem onClick={handleMenuAction(handleMarkRead)}>
+                <ListItemIcon>
+                  <CheckIcon size={18} />
+                </ListItemIcon>
+                {t("notifications_mark_read")}
+              </MenuItem>
+            )}
+            <MenuItem onClick={handleMenuAction(() => handleCopy(formatMessage(notification)))}>
+              <ListItemIcon>
+                <CopyIcon size={18} />
+              </ListItemIcon>
+              {t("common_copy_to_clipboard")}
+            </MenuItem>
+            <MenuItem onClick={handleMenuAction(handleDelete)} sx={{ color: "error.main" }}>
+              <ListItemIcon sx={{ color: "error.main" }}>
+                <DeleteIcon size={18} />
+              </ListItemIcon>
+              {t("notifications_delete")}
+            </MenuItem>
+          </Menu>
+        </Box>
         {notification.title && (
-          <Typography variant="h5" component="div" role="rowheader">
+          <Typography variant="h5" component="div" role="rowheader" sx={{ marginTop: 0.25, marginBottom: 0.5 }}>
             {formatTitle(notification)}
           </Typography>
         )}
@@ -255,7 +282,7 @@ const NotificationItem = (props) => {
         </Typography>
         {attachment && <Attachment attachment={attachment} />}
         {tags && (
-          <Typography sx={{ fontSize: 14 }} color="text.secondary">
+          <Typography sx={{ fontSize: 14, color: "text.secondary", marginTop: 0.5 }}>
             {t("notifications_tags")}: {tags}
           </Typography>
         )}

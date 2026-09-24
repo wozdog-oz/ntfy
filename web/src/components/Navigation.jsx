@@ -22,16 +22,18 @@ import {
 } from "@mui/material";
 import * as React from "react";
 import { useContext, useState } from "react";
-import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
-import Person from "@mui/icons-material/Person";
-import SettingsIcon from "@mui/icons-material/Settings";
-import AddIcon from "@mui/icons-material/Add";
 import { useLocation, useNavigate } from "react-router-dom";
-import ChatBubble from "@mui/icons-material/ChatBubble";
-import MoreVert from "@mui/icons-material/MoreVert";
-import NotificationsOffOutlined from "@mui/icons-material/NotificationsOffOutlined";
-import Send from "@mui/icons-material/Send";
-import ArticleIcon from "@mui/icons-material/Article";
+import {
+  MessageCircle as ChatBubbleOutlineIcon,
+  MessagesSquare as ChatBubble,
+  User as Person,
+  Settings as SettingsIcon,
+  Plus as AddIcon,
+  EllipsisVertical as MoreVert,
+  BellOff as NotificationsOffOutlined,
+  Send,
+  BookOpen as ArticleIcon,
+} from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import CelebrationIcon from "@mui/icons-material/Celebration";
 import SubscribeDialog from "./SubscribeDialog";
@@ -151,7 +153,7 @@ const NavList = (props) => {
         {!showSubscriptionsList && (
           <ListItemButton onClick={() => navigate(routes.app)} selected={location.pathname === config.app_root}>
             <ListItemIcon>
-              <ChatBubble />
+              <ChatBubble size={22} />
             </ListItemIcon>
             <ListItemText primary={t("nav_button_all_notifications")} />
           </ListItemButton>
@@ -161,7 +163,7 @@ const NavList = (props) => {
             <ListSubheader>{t("nav_topics_title")}</ListSubheader>
             <ListItemButton onClick={() => navigate(routes.app)} selected={location.pathname === config.app_root}>
               <ListItemIcon>
-                <ChatBubble />
+                <ChatBubble size={22} />
               </ListItemIcon>
               <ListItemText primary={t("nav_button_all_notifications")} />
             </ListItemButton>
@@ -172,35 +174,38 @@ const NavList = (props) => {
         {session.exists() && (
           <ListItemButton onClick={handleAccountClick} selected={location.pathname === routes.account}>
             <ListItemIcon>
-              <Person />
+              <Person size={22} />
             </ListItemIcon>
             <ListItemText primary={t("nav_button_account")} />
           </ListItemButton>
         )}
         <ListItemButton onClick={() => navigate(routes.settings)} selected={location.pathname === routes.settings}>
           <ListItemIcon>
-            <SettingsIcon />
+            <SettingsIcon size={22} />
           </ListItemIcon>
           <ListItemText primary={t("nav_button_settings")} />
         </ListItemButton>
         <ListItemButton onClick={() => openUrl("/docs")}>
           <ListItemIcon>
-            <ArticleIcon />
+            <ArticleIcon size={22} />
           </ListItemIcon>
           <ListItemText primary={t("nav_button_documentation")} />
         </ListItemButton>
         <ListItemButton onClick={() => props.onPublishMessageClick()}>
           <ListItemIcon>
-            <Send />
+            <Send size={22} />
           </ListItemIcon>
           <ListItemText primary={t("nav_button_publish_message")} />
         </ListItemButton>
         <ListItemButton onClick={() => setSubscribeDialogOpen(true)}>
           <ListItemIcon>
-            <AddIcon />
+            <AddIcon size={22} />
           </ListItemIcon>
           <ListItemText primary={t("nav_button_subscribe")} />
         </ListItemButton>
+        <Typography variant="caption" component="div" sx={{ color: "text.secondary", px: 3, pt: 2 }}>
+          ntfy {__APP_VERSION__}
+        </Typography>
         {showUpgradeBanner && (
           // The text background gradient didn't seem to do well with switching between light/dark mode,
           // So adding a `key` forces React to replace the entire component when the theme changes
@@ -304,8 +309,8 @@ const SubscriptionItem = (props) => {
     subscription.state === ConnectionState.Connecting ? (
       <CircularProgress size="24px" />
     ) : (
-      <Badge badgeContent={iconBadge} invisible={subscription.new === 0} color="primary">
-        <ChatBubbleOutlineIcon />
+      <Badge badgeContent={iconBadge} invisible={subscription.new === 0} color="error">
+        <ChatBubbleOutlineIcon size={22} />
       </Badge>
     );
 
@@ -351,7 +356,7 @@ const SubscriptionItem = (props) => {
         {subscription.mutedUntil > 0 && (
           <ListItemIcon edge="end" sx={{ minWidth: "26px" }} aria-label={t("nav_button_muted")}>
             <Tooltip title={t("nav_button_muted")}>
-              <NotificationsOffOutlined />
+              <NotificationsOffOutlined size={18} />
             </Tooltip>
           </ListItemIcon>
         )}
@@ -364,7 +369,7 @@ const SubscriptionItem = (props) => {
               setMenuAnchorEl(e.currentTarget);
             }}
           >
-            <MoreVert fontSize="small" />
+            <MoreVert size={18} />
           </IconButton>
         </ListItemIcon>
       </ListItemButton>

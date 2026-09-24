@@ -2,10 +2,10 @@
 
 a,
 a:visited {
-  color: #338574;
+  color: #007aff;
 }
 
 a:hover {
   text-decoration: none;
-  color: #317f6f;
+  color: #0062cc;
 }

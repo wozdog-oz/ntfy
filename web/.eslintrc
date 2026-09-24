@@ -4,6 +4,7 @@
     "browser": true
   },
   "globals": {
+    "__APP_VERSION__": "readonly",
     "config": "readonly"
   },
   "parserOptions": {

@@ -2,8 +2,12 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
+import pkg from "./package.json";
 
 export default defineConfig(({ mode }) => ({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   build: {
     outDir: "build",
     assetsDir: "static/media",
@@ -46,7 +50,7 @@ export default defineConfig(({ mode }) => ({
       },
       // The actual prod manifest is served from the go server, see server.go handleWebManifest.
       manifest: mode === "development" && {
-        theme_color: "#317f6f",
+        theme_color: "#f9f9f9",
         icons: [
           {
             src: "/static/images/pwa-192x192.png",

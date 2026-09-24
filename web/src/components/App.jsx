@@ -14,7 +14,7 @@ import userManager from "../app/UserManager";
 import { expandUrl, getKebabCaseLangStr, darkModeEnabled, updateFavicon } from "../app/utils";
 import ErrorBoundary from "./ErrorBoundary";
 import routes from "./routes";
-import { useAccountListener, useBackgroundProcesses, useConnectionListeners, useWebPushTopics } from "./hooks";
+import { useAccountListener, useBackgroundProcesses, useConnectionListeners, useForegroundRefreshKey, useWebPushTopics } from "./hooks";
 import PublishDialog from "./PublishDialog";
 import Messaging from "./Messaging";
 import Login from "./Login";
@@ -119,11 +119,12 @@ const Layout = () => {
   const { account, setAccount } = useContext(AccountContext);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [sendDialogOpenMode, setSendDialogOpenMode] = useState("");
+  const refreshKey = useForegroundRefreshKey();
   const users = useLiveQuery(() => userManager.all());
-  const subscriptions = useLiveQuery(() => subscriptionManager.all());
+  const subscriptions = useLiveQuery(() => subscriptionManager.all(), [refreshKey]);
   // Preloaded here so the All view (and single topics, via filter) have data on mount -- no empty
   // frame when switching.
-  const allNotifications = useLiveQuery(() => subscriptionManager.getAllNotifications());
+  const allNotifications = useLiveQuery(() => subscriptionManager.getAllNotifications(), [refreshKey]);
   const webPushTopics = useWebPushTopics();
   const subscriptionsWithoutInternal = subscriptions?.filter((s) => !s.internal);
   const newNotificationsCount = subscriptionsWithoutInternal?.reduce((prev, cur) => prev + cur.new, 0) || 0;
@@ -184,7 +185,7 @@ const Main = (props) => (
       width: { sm: `calc(100% - ${Navigation.width}px)` },
       height: "100dvh",
       overflow: "auto",
-      backgroundColor: ({ palette }) => (palette.mode === "light" ? palette.grey[100] : palette.grey[900]),
+      backgroundColor: ({ palette }) => palette.background.default,
     }}
   >
     {props.children}
@@ -196,7 +197,7 @@ const Loader = () => (
     open
     sx={{
       zIndex: 100000,
-      backgroundColor: ({ palette }) => (palette.mode === "light" ? palette.grey[100] : palette.grey[900]),
+      backgroundColor: ({ palette }) => palette.background.default,
     }}
   >
     <CircularProgress color="success" disableShrink />
