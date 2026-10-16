@@ -246,6 +246,10 @@ export class SubscriptionManager {
     await this.db.notifications.delete(notificationId);
   }
 
+  async deleteNotificationsById(notificationIds) {
+    await this.db.notifications.bulkDelete(notificationIds);
+  }
+
   async deleteNotificationBySequenceId(subscriptionId, sequenceId) {
     await this.db.notifications.where({ subscriptionId, sequenceId }).delete();
   }

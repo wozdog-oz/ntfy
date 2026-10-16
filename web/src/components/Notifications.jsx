@@ -15,17 +15,35 @@ import {
   IconButton,
   Box,
   Button,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@mui/material";
 import * as React from "react";
 import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteSweepOutlinedIcon from "@mui/icons-material/DeleteSweepOutlined";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { Trans, useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
-import { copyToClipboard, formatBytes, formatDateTime, maybeActionErrors, openUrl, shortUrl, topicUrl, unmatchedTags } from "../app/utils";
+import {
+  copyToClipboard,
+  formatBytes,
+  formatDateTime,
+  maybeActionErrors,
+  openUrl,
+  shortUrl,
+  topicDisplayName,
+  topicUrl,
+  unmatchedTags,
+} from "../app/utils";
 import { ACTION_BROADCAST, ACTION_COPY, ACTION_HTTP, ACTION_VIEW } from "../app/actions";
 import { formatMessage, formatTitle, isImage } from "../app/notificationUtils";
+import { topicColor } from "../app/topicColors";
 import { LightboxBackdrop, Paragraph, VerticallyCenteredContainer } from "./styles";
 import subscriptionManager from "../app/SubscriptionManager";
 import notifier from "../app/Notifier";
@@ -60,7 +78,7 @@ export const SingleSubscription = () => {
   if (!selected || allNotifications === null || allNotifications === undefined) {
     return <DeferredLoading />;
   }
-  return <SingleSubscriptionList subscription={selected} allNotifications={allNotifications} />;
+  return <SingleSubscriptionList subscription={selected} subscriptions={subscriptions} allNotifications={allNotifications} />;
 };
 
 const AllSubscriptionsList = (props) => {
@@ -71,11 +89,11 @@ const AllSubscriptionsList = (props) => {
   if (notifications.length === 0) {
     return <NoNotificationsWithoutSubscription subscriptions={subscriptions} />;
   }
-  return <NotificationList key="all" notifications={notifications} messageBar={false} />;
+  return <NotificationList key="all" subscriptions={subscriptions} notifications={notifications} messageBar={false} />;
 };
 
 const SingleSubscriptionList = (props) => {
-  const { subscription, allNotifications } = props;
+  const { subscription, subscriptions, allNotifications } = props;
   // Filter the preloaded allNotifications instead of a per-topic query (getNotifications(id) ==
   // getAllNotifications() filtered by id), so topic switches are instant.
   const notifications = useMemo(
@@ -85,16 +103,82 @@ const SingleSubscriptionList = (props) => {
   if (notifications.length === 0) {
     return <NoNotifications subscription={subscription} />;
   }
-  return <NotificationList id={subscription.id} notifications={notifications} messageBar />;
+  return <NotificationList id={subscription.id} subscriptions={subscriptions} notifications={notifications} messageBar />;
+};
+
+// Local calendar day of a notification timestamp (seconds), e.g. "2026-10-16"
+const dayKey = (timestamp) => {
+  const d = new Date(timestamp * 1000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+// Notifications are already sorted newest first, so consecutive runs with the same day form a group
+const groupByDay = (notifications) => {
+  const groups = [];
+  notifications.forEach((notification) => {
+    const key = dayKey(notification.time);
+    const last = groups.at(-1);
+    if (last && last.key === key) {
+      last.notifications.push(notification);
+    } else {
+      groups.push({ key, notifications: [notification] });
+    }
+  });
+  return groups;
+};
+
+const dayLabel = (key, t) => {
+  const now = Date.now() / 1000;
+  if (key === dayKey(now)) {
+    return t("notifications_day_today");
+  }
+  if (key === dayKey(now - 86400)) {
+    return t("notifications_day_yesterday");
+  }
+  const [year, month, day] = key.split("-").map(Number);
+  return new Intl.DateTimeFormat(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(
+    new Date(year, month - 1, day),
+  );
 };
 
 const NotificationList = (props) => {
   const { t } = useTranslation();
   const pageSize = 20;
-  const { notifications } = props;
+  const { notifications, subscriptions } = props;
   const [snackOpen, setSnackOpen] = useState(false);
   const [maxCount, setMaxCount] = useState(pageSize);
+  const [pendingDelete, setPendingDelete] = useState(null); // { title, description, ids } awaiting confirmation
   const count = Math.min(notifications.length, maxCount);
+  const subscriptionsById = useMemo(() => Object.fromEntries((subscriptions ?? []).map((s) => [s.id, s])), [subscriptions]);
+
+  // Day groups are built from the visible (paged) slice, but deleting a day removes all of that
+  // day's notifications in this list, including ones not scrolled into view yet.
+  const groups = useMemo(() => groupByDay(notifications.slice(0, count)), [notifications, count]);
+  const todayKey = dayKey(Date.now() / 1000);
+  const olderIds = useMemo(() => notifications.filter((n) => dayKey(n.time) !== todayKey).map((n) => n.id), [notifications, todayKey]);
+
+  const handleDeleteDayClick = (group) => {
+    const ids = notifications.filter((n) => dayKey(n.time) === group.key).map((n) => n.id);
+    setPendingDelete({
+      title: t("notifications_delete_day_title", { day: dayLabel(group.key, t) }),
+      description: t("notifications_delete_confirm_description", { count: ids.length }),
+      ids,
+    });
+  };
+
+  const handleDeleteOlderClick = () => {
+    setPendingDelete({
+      title: t("notifications_delete_older_title"),
+      description: t("notifications_delete_confirm_description", { count: olderIds.length }),
+      ids: olderIds,
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    console.log(`[Notifications] Deleting ${pendingDelete.ids.length} notification(s)`);
+    await subscriptionManager.deleteNotificationsById(pendingDelete.ids);
+    setPendingDelete(null);
+  };
 
   useEffect(
     () => () => {
@@ -122,12 +206,29 @@ const NotificationList = (props) => {
         aria-label={t("notifications_list")}
         sx={{
           marginTop: 3,
-          marginBottom: props.messageBar ? "100px" : 3, // Hack to avoid hiding notifications behind the message bar
+          marginBottom: props.messageBar ? "180px" : "100px", // Hack to avoid hiding notifications behind the message bar and topic tabs
         }}
       >
         <Stack spacing={3}>
-          {notifications.slice(0, count).map((notification) => (
-            <NotificationItem key={notification.id} notification={notification} onShowSnack={() => setSnackOpen(true)} />
+          {olderIds.length > 0 && (
+            <Box sx={{ display: "flex", justifyContent: "flex-end", paddingX: { xs: 1, md: 0 }, marginBottom: -1 }}>
+              <Button size="small" color="error" startIcon={<DeleteSweepOutlinedIcon />} onClick={handleDeleteOlderClick}>
+                {t("notifications_delete_older_button")}
+              </Button>
+            </Box>
+          )}
+          {groups.map((group) => (
+            <Stack key={group.key} spacing={2} role="group" aria-label={dayLabel(group.key, t)}>
+              <DayHeader label={dayLabel(group.key, t)} onDeleteClick={() => handleDeleteDayClick(group)} />
+              {group.notifications.map((notification) => (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  subscription={subscriptionsById[notification.subscriptionId]}
+                  onShowSnack={() => setSnackOpen(true)}
+                />
+              ))}
+            </Stack>
           ))}
           <Snackbar
             open={snackOpen}
@@ -137,7 +238,57 @@ const NotificationList = (props) => {
           />
         </Stack>
       </Container>
+      <Dialog open={!!pendingDelete} onClose={() => setPendingDelete(null)}>
+        <DialogTitle>{pendingDelete?.title}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{pendingDelete?.description}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPendingDelete(null)}>{t("common_cancel")}</Button>
+          <Button color="error" onClick={handleConfirmDelete}>
+            {t("notifications_delete")}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </InfiniteScroll>
+  );
+};
+
+const DayHeader = (props) => {
+  const { t } = useTranslation();
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", paddingX: { xs: 1, md: 0 } }}>
+      <Typography
+        variant="subtitle2"
+        color="text.secondary"
+        component="h2"
+        sx={{ flexGrow: 1, textTransform: "uppercase", letterSpacing: 0.5 }}
+      >
+        {props.label}
+      </Typography>
+      <Tooltip title={t("notifications_delete_day_title", { day: props.label })} enterDelay={500}>
+        <IconButton size="small" onClick={props.onDeleteClick} aria-label={t("notifications_delete_day_title", { day: props.label })}>
+          <DeleteSweepOutlinedIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+    </Box>
+  );
+};
+
+const TopicPill = ({ subscription }) => {
+  const color = topicColor(subscription);
+  return (
+    <Chip
+      size="small"
+      label={topicDisplayName(subscription)}
+      sx={{
+        marginLeft: 1,
+        height: 20,
+        fontWeight: 500,
+        verticalAlign: "text-bottom",
+        ...(color && { backgroundColor: color.background, color: color.text }),
+      }}
+    />
   );
 };
 
@@ -180,7 +331,7 @@ const NotificationBody = ({ notification }) => {
 const NotificationItem = (props) => {
   const { t } = useTranslation();
   const { dateFormat, timeFormat } = usePrefCache();
-  const { notification } = props;
+  const { notification, subscription } = props;
   const { attachment } = notification;
   const date = formatDateTime(notification.time, dateFormat, timeFormat);
   const otherTags = unmatchedTags(notification.tags);
@@ -224,6 +375,7 @@ const NotificationItem = (props) => {
         )}
         <Typography sx={{ fontSize: 14 }} color="text.secondary">
           {date}
+          {subscription && <TopicPill subscription={subscription} />}
           {[1, 2, 4, 5].includes(notification.priority) && (
             <img
               src={priorityFiles[notification.priority]}

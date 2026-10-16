@@ -17,6 +17,7 @@ import routes from "./routes";
 import { useAccountListener, useBackgroundProcesses, useConnectionListeners, useWebPushTopics } from "./hooks";
 import PublishDialog from "./PublishDialog";
 import Messaging from "./Messaging";
+import TopicTabBar from "./TopicTabBar";
 import Login from "./Login";
 import Signup from "./Signup";
 import Account from "./Account";
@@ -166,6 +167,7 @@ const Layout = () => {
             }}
           />
         </Main>
+        <TopicTabBar subscriptions={subscriptionsWithoutInternal} selected={selected} />
         <Messaging selected={selected} dialogOpenMode={sendDialogOpenMode} onDialogOpenModeChange={setSendDialogOpenMode} />
       </Box>
     </PrefCacheProvider>
