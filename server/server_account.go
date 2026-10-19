@@ -324,6 +324,12 @@ func (s *Server) handleAccountTokenCreate(w http.ResponseWriter, r *http.Request
 
 func (s *Server) handleAccountTokenUpdate(w http.ResponseWriter, r *http.Request, v *visitor) error {
 	u := v.User()
+	if u == nil {
+		// ensureUser already checked, but the user can be nil'd between that check and this
+		// re-read: IP-keyed visitors are shared, and a concurrent anonymous request on the
+		// same IP calls SetUser(nil) on this very object (recurring production panic)
+		return errHTTPUnauthorized
+	}
 	req, err := readJSONWithLimit[apiAccountTokenUpdateRequest](r.Body, jsonBodyBytesLimit, true) // Allow empty body!
 	if err != nil {
 		return err
@@ -650,6 +656,8 @@ func (s *Server) handleAccountPhoneNumberAdd(w http.ResponseWriter, r *http.Requ
 	if err := s.twilio.CheckVerify(req.Number, req.Code); err != nil {
 		if errors.Is(err, twilio.ErrVerificationExpired) {
 			return errHTTPGonePhoneVerificationExpired
+		} else if errors.Is(err, twilio.ErrVerificationCodeInvalid) {
+			return errHTTPBadRequestPhoneVerificationCodeInvalid
 		}
 		return err
 	}

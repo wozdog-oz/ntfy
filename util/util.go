@@ -71,6 +71,19 @@ func ContainsAll[T comparable](haystack []T, needles []T) bool {
 	return true
 }
 
+// Dedup returns the distinct elements of s, keeping the order of their first occurrence
+func Dedup[T comparable](s []T) []T {
+	seen := make(map[T]struct{}, len(s))
+	result := make([]T, 0, len(s))
+	for _, v := range s {
+		if _, ok := seen[v]; !ok {
+			seen[v] = struct{}{}
+			result = append(result, v)
+		}
+	}
+	return result
+}
+
 // SplitNoEmpty splits a string using strings.Split, but filters out empty strings
 func SplitNoEmpty(s string, sep string) []string {
 	res := make([]string, 0)
@@ -479,4 +492,15 @@ func SanitizeUTF8(s string) string {
 		s = strings.ReplaceAll(s, "\x00", "")
 	}
 	return s
+}
+
+// MaxTime returns the latest of the given times
+func MaxTime(times ...time.Time) time.Time {
+	var max time.Time
+	for _, t := range times {
+		if t.After(max) {
+			max = t
+		}
+	}
+	return max
 }
