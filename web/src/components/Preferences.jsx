@@ -74,6 +74,9 @@ const Preferences = () => (
       <Reservations />
       <Users />
       <Appearance />
+      <Typography variant="caption" align="center" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+        ntfy v{__APP_VERSION__}
+      </Typography>
     </Stack>
   </Container>
 );

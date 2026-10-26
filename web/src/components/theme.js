@@ -1,72 +1,75 @@
-// Apple/iOS-inspired theme (custom fork). Colours follow Apple's system colours:
-// https://developer.apple.com/design/human-interface-guidelines/color
+// homelab-look v1 (custom fork): the shared look of the homelab apps, copied from the homelab-app
+// skill template (apps/fintrack/src/assets/styles/main.css). The oklch tokens there are converted
+// to hex here because MUI's colour helpers can't parse oklch. Look upgrades: diff against that file.
 
-const fontFamily = [
-  "-apple-system",
-  "BlinkMacSystemFont",
-  '"SF Pro Text"',
-  '"SF Pro Display"',
-  '"Helvetica Neue"',
-  "system-ui",
-  "Roboto",
-  "sans-serif",
-].join(",");
+const fontFamily = ["ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", '"Segoe UI"', "Roboto", "sans-serif"].join(",");
 
-export const iosColors = {
+// Each app sets its brand once (primary); everything else is neutral greys and the status colours
+export const homelabColors = {
   light: {
-    blue: "#007AFF",
-    accent: "#3A3A3C", // dark grey used for icons, buttons and links instead of blue
-    red: "#FF3B30",
-    green: "#34C759",
-    orange: "#FF9500",
-    groupedBackground: "#F2F2F7",
-    card: "#FFFFFF",
-    label: "#000000",
-    secondaryLabel: "rgba(60, 60, 67, 0.6)",
-    separator: "rgba(60, 60, 67, 0.18)",
-    fill: "rgba(120, 120, 128, 0.12)",
-    bar: "rgba(255, 255, 255, 0.82)",
+    primary: "#554d5e",
+    primaryContent: "#ffffff",
+    base100: "#ffffff",
+    base200: "#f6f6f9",
+    base300: "#e6e6e9",
+    baseContent: "#18181b",
+    secondary: "#51515c",
+    info: "#0a8fd1",
+    success: "#25984d",
+    warning: "#f2a618",
+    error: "#db2b33",
   },
   dark: {
-    blue: "#0A84FF",
-    accent: "#D1D1D6",
-    red: "#FF453A",
-    green: "#30D158",
-    orange: "#FF9F0A",
-    groupedBackground: "#000000",
-    card: "#1C1C1E",
-    label: "#FFFFFF",
-    secondaryLabel: "rgba(235, 235, 245, 0.6)",
-    separator: "rgba(84, 84, 88, 0.6)",
-    fill: "rgba(120, 120, 128, 0.24)",
-    bar: "rgba(28, 28, 30, 0.82)",
+    primary: "#b4abbf",
+    primaryContent: "#1e1a22",
+    base100: "#161618",
+    base200: "#1e1e20",
+    base300: "#303033",
+    baseContent: "#e4e4e7",
+    secondary: "#a4a4ac",
+    info: "#4fa8e1",
+    success: "#4cb86a",
+    warning: "#f5ae39",
+    error: "#f3625d",
   },
+};
+
+// The look: one set of non-colour values for both themes (homelab-look --radius-* / --border)
+export const look = {
+  radiusField: 4, // buttons, inputs, selects, tabs
+  radiusSelector: 4, // checkboxes, toggles, badges
+  radiusBox: 8, // cards, modals, alerts, dropdowns
+  headerHeight: 48,
+  tabsHeight: 44,
 };
 
 /** @returns {import("@mui/material").ThemeOptions} */
 const makeTheme = (mode) => {
-  const c = iosColors[mode];
+  const c = homelabColors[mode];
+  const border = `1px solid ${c.base300}`;
   return {
-    shape: { borderRadius: 10 },
+    shape: { borderRadius: look.radiusField },
+    shadows: Array(25).fill("none"), // flat: --depth 0
     typography: {
       fontFamily,
-      h5: { fontSize: "1.2rem", fontWeight: 600, letterSpacing: "-0.01em", lineHeight: 1.3 },
-      h6: { fontSize: "1.0625rem", fontWeight: 600, letterSpacing: "-0.01em" },
-      body1: { fontSize: "1rem", lineHeight: 1.4, letterSpacing: "-0.005em" },
-      body2: { fontSize: "0.9375rem", lineHeight: 1.4 },
-      button: { textTransform: "none", fontWeight: 600, fontSize: "0.9375rem" },
+      h5: { fontSize: "1.125rem", fontWeight: 600, lineHeight: 1.3 },
+      h6: { fontSize: "1rem", fontWeight: 600 },
+      body1: { fontSize: "0.9375rem", lineHeight: 1.45 },
+      body2: { fontSize: "0.875rem", lineHeight: 1.45 },
+      button: { textTransform: "none", fontWeight: 600, fontSize: "0.875rem" },
     },
     palette: {
       mode,
-      primary: { main: c.accent },
-      info: { main: c.blue },
-      secondary: { main: c.green },
-      error: { main: c.red },
-      success: { main: c.green },
-      warning: { main: c.orange },
-      background: { default: c.groupedBackground, paper: c.card },
-      text: { primary: c.label, secondary: c.secondaryLabel },
-      divider: c.separator,
+      primary: { main: c.primary, contrastText: c.primaryContent },
+      secondary: { main: c.secondary },
+      info: { main: c.info },
+      error: { main: c.error },
+      success: { main: c.success },
+      warning: { main: c.warning },
+      background: { default: c.base100, paper: c.base100 },
+      text: { primary: c.baseContent, secondary: c.secondary },
+      divider: c.base300,
+      action: { selected: c.base200, hover: c.base200 },
     },
     components: {
       MuiCssBaseline: {
@@ -79,35 +82,26 @@ const makeTheme = (mode) => {
         },
       },
       MuiPaper: {
+        defaultProps: { elevation: 0 },
         styleOverrides: { root: { backgroundImage: "none" } },
       },
       MuiAppBar: {
         defaultProps: { elevation: 0, color: "inherit" },
         styleOverrides: {
-          root: {
-            backgroundColor: c.bar,
-            backdropFilter: "saturate(180%) blur(20px)",
-            WebkitBackdropFilter: "saturate(180%) blur(20px)",
-            borderBottom: `0.5px solid ${c.separator}`,
-            color: c.label,
-          },
+          root: { backgroundColor: c.base100, borderBottom: border, color: c.baseContent },
         },
       },
       MuiCard: {
         defaultProps: { elevation: 0 },
         styleOverrides: {
-          root: {
-            borderRadius: 16,
-            border: `0.5px solid ${c.separator}`,
-            boxShadow: mode === "light" ? "0 1px 3px rgba(0, 0, 0, 0.04)" : "none",
-          },
+          root: { borderRadius: look.radiusBox, border, boxShadow: "none" },
         },
       },
       MuiCardContent: {
         styleOverrides: {
           root: {
-            padding: "14px 16px",
-            ":last-child": { paddingBottom: "14px" },
+            padding: "12px 16px",
+            ":last-child": { paddingBottom: "12px" },
           },
         },
       },
@@ -119,113 +113,78 @@ const makeTheme = (mode) => {
       MuiButton: {
         defaultProps: { disableElevation: true },
         styleOverrides: {
-          root: { borderRadius: 10, paddingLeft: 12, paddingRight: 12 },
+          root: { borderRadius: look.radiusField, paddingLeft: 12, paddingRight: 12 },
         },
       },
       MuiIconButton: {
-        styleOverrides: { root: { borderRadius: 10 } },
+        styleOverrides: { root: { borderRadius: look.radiusField } },
       },
       MuiFab: {
-        styleOverrides: {
-          root: {
-            borderRadius: 16,
-            boxShadow: "0 4px 16px rgba(0, 0, 0, 0.15)",
-          },
-        },
+        styleOverrides: { root: { borderRadius: look.radiusBox, boxShadow: "none" } },
       },
-      MuiDrawer: {
-        styleOverrides: {
-          paper: {
-            backgroundColor: c.groupedBackground,
-            borderRight: `0.5px solid ${c.separator}`,
-          },
-        },
+      MuiChip: {
+        styleOverrides: { root: { borderRadius: look.radiusSelector } },
+      },
+      MuiBadge: {
+        styleOverrides: { badge: { borderRadius: look.radiusSelector } },
       },
       MuiListSubheader: {
         styleOverrides: {
-          root: {
-            backgroundColor: "transparent",
-            color: c.secondaryLabel,
-            fontSize: "0.8125rem",
-            fontWeight: 400,
-            textTransform: "uppercase",
-            letterSpacing: "0.02em",
-            lineHeight: "36px",
-            paddingLeft: 24,
-          },
+          root: { backgroundColor: "transparent", color: c.secondary, fontSize: "0.75rem", fontWeight: 600, lineHeight: "32px" },
         },
       },
       MuiListItemButton: {
         styleOverrides: {
           root: {
-            borderRadius: 10,
-            margin: "1px 8px",
-            "&.Mui-selected": {
-              backgroundColor: c.fill,
-              color: c.label,
-              "& .MuiListItemIcon-root": { color: c.label },
-              "& .MuiListItemText-primary": { fontWeight: 600 },
-            },
-            "&.Mui-selected:hover": { backgroundColor: c.fill },
+            borderRadius: look.radiusField,
+            "&.Mui-selected, &.Mui-selected:hover": { backgroundColor: c.base200, color: c.primary },
           },
         },
       },
       MuiListItemIcon: {
-        styleOverrides: {
-          root: { minWidth: "36px", color: c.accent },
-        },
+        styleOverrides: { root: { minWidth: "36px", color: c.baseContent } },
       },
       MuiDialog: {
-        styleOverrides: {
-          paper: { borderRadius: 14 },
-        },
+        styleOverrides: { paper: { borderRadius: look.radiusBox, border } },
       },
       MuiMenu: {
-        styleOverrides: {
-          paper: {
-            borderRadius: 12,
-            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.16)",
-            border: `0.5px solid ${c.separator}`,
-          },
-        },
+        styleOverrides: { paper: { borderRadius: look.radiusBox, border } },
       },
       MuiPopover: {
-        styleOverrides: { paper: { borderRadius: 12 } },
+        styleOverrides: { paper: { borderRadius: look.radiusBox } },
       },
       MuiMenuItem: {
-        styleOverrides: { root: { fontSize: "1rem", minHeight: 44 } },
+        styleOverrides: { root: { fontSize: "0.875rem", minHeight: 40 } },
       },
       MuiOutlinedInput: {
-        styleOverrides: { root: { borderRadius: 10 } },
+        styleOverrides: { root: { borderRadius: look.radiusField } },
       },
       MuiAlert: {
-        styleOverrides: { root: { borderRadius: 12 } },
+        styleOverrides: { root: { borderRadius: look.radiusBox } },
       },
       MuiSnackbarContent: {
         styleOverrides: {
-          root: {
-            borderRadius: 12,
-            ...(mode === "dark" && { color: "#000", backgroundColor: "#e5e5ea" }),
-          },
+          root: { borderRadius: look.radiusBox, backgroundColor: c.baseContent, color: c.base100 },
         },
       },
       MuiTooltip: {
-        styleOverrides: { tooltip: { borderRadius: 8, fontSize: "0.8125rem" } },
+        styleOverrides: { tooltip: { borderRadius: look.radiusField, fontSize: "0.75rem" } },
       },
-      // iOS-style toggle switch
+      // DaisyUI-style toggle: square-ish track and thumb (--radius-selector)
       MuiSwitch: {
         styleOverrides: {
-          root: { width: 51, height: 31, padding: 0, margin: 8 },
+          root: { width: 40, height: 24, padding: 0, margin: 8 },
           switchBase: {
-            padding: 2,
+            padding: 3,
+            color: c.base100,
             "&.Mui-checked": {
-              transform: "translateX(20px)",
-              color: "#fff",
-              "& + .MuiSwitch-track": { backgroundColor: c.green, opacity: 1, border: 0 },
+              transform: "translateX(16px)",
+              color: c.primaryContent,
+              "& + .MuiSwitch-track": { backgroundColor: c.primary, opacity: 1, border: 0 },
             },
           },
-          thumb: { width: 27, height: 27, boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)" },
-          track: { borderRadius: 31 / 2, backgroundColor: c.fill, opacity: 1 },
+          thumb: { width: 18, height: 18, borderRadius: look.radiusSelector - 1, boxShadow: "none" },
+          track: { borderRadius: look.radiusSelector, backgroundColor: c.base300, opacity: 1 },
         },
       },
     },

@@ -50,7 +50,7 @@ export default defineConfig(({ mode }) => ({
       },
       // The actual prod manifest is served from the go server, see server.go handleWebManifest.
       manifest: mode === "development" && {
-        theme_color: "#f9f9f9",
+        theme_color: "#ffffff",
         icons: [
           {
             src: "/static/images/pwa-192x192.png",

@@ -1,12 +1,12 @@
 import * as React from "react";
 import { Suspense, useContext, useEffect, useState, useMemo } from "react";
-import { Box, Toolbar, CssBaseline, Backdrop, CircularProgress, useMediaQuery, ThemeProvider, createTheme } from "@mui/material";
+import { Box, CssBaseline, Backdrop, CircularProgress, useMediaQuery, ThemeProvider, createTheme } from "@mui/material";
 import { useLiveQuery } from "dexie-react-hooks";
 import { BrowserRouter, Outlet, Route, Routes, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AllSubscriptions, SingleSubscription } from "./Notifications";
-import { darkTheme, lightTheme } from "./theme";
-import Navigation from "./Navigation";
+import { darkTheme, lightTheme, look } from "./theme";
+import { StatusAlerts } from "./Navigation";
 import ActionBar from "./ActionBar";
 import Preferences from "./Preferences";
 import subscriptionManager from "../app/SubscriptionManager";
@@ -15,9 +15,6 @@ import { expandUrl, getKebabCaseLangStr, darkModeEnabled, updateFavicon } from "
 import ErrorBoundary from "./ErrorBoundary";
 import routes from "./routes";
 import { useAccountListener, useBackgroundProcesses, useConnectionListeners, useForegroundRefreshKey, useWebPushTopics } from "./hooks";
-import PublishDialog from "./PublishDialog";
-import Messaging from "./Messaging";
-import TopicTabBar from "./TopicTabBar";
 import Login from "./Login";
 import Signup from "./Signup";
 import Account from "./Account";
@@ -118,8 +115,6 @@ const AuthLayout = () => {
 const Layout = () => {
   const params = useParams();
   const { account, setAccount } = useContext(AccountContext);
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [sendDialogOpenMode, setSendDialogOpenMode] = useState("");
   const refreshKey = useForegroundRefreshKey();
   const users = useLiveQuery(() => userManager.all());
   const subscriptions = useLiveQuery(() => subscriptionManager.all(), [refreshKey]);
@@ -150,16 +145,11 @@ const Layout = () => {
   return (
     <PrefCacheProvider>
       <Box sx={{ display: "flex" }}>
-        <ActionBar selected={selected} onMobileDrawerToggle={() => setMobileDrawerOpen(!mobileDrawerOpen)} />
-        <Navigation
-          subscriptions={subscriptionsWithoutInternal}
-          selectedSubscription={selected}
-          mobileDrawerOpen={mobileDrawerOpen}
-          onMobileDrawerToggle={() => setMobileDrawerOpen(!mobileDrawerOpen)}
-          onPublishMessageClick={() => setSendDialogOpenMode(PublishDialog.OPEN_MODE_DEFAULT)}
-        />
+        {/* Custom fork: no sidebar and no send-message bar; topics are tabs in the header */}
+        <ActionBar subscriptions={subscriptionsWithoutInternal} selected={selected} />
         <Main>
-          <Toolbar />
+          <HeaderSpacer withTabs={subscriptionsWithoutInternal?.length > 0} />
+          <StatusAlerts />
           <Outlet
             context={{
               subscriptions: subscriptionsWithoutInternal,
@@ -168,8 +158,6 @@ const Layout = () => {
             }}
           />
         </Main>
-        <TopicTabBar subscriptions={subscriptionsWithoutInternal} selected={selected} />
-        <Messaging selected={selected} dialogOpenMode={sendDialogOpenMode} onDialogOpenModeChange={setSendDialogOpenMode} />
       </Box>
     </PrefCacheProvider>
   );
@@ -183,8 +171,7 @@ const Main = (props) => (
       display: "flex",
       flexGrow: 1,
       flexDirection: "column",
-      padding: { xs: 0, md: 3 },
-      width: { sm: `calc(100% - ${Navigation.width}px)` },
+      width: "100%",
       height: "100dvh",
       overflow: "auto",
       backgroundColor: ({ palette }) => palette.background.default,
@@ -192,6 +179,16 @@ const Main = (props) => (
   >
     {props.children}
   </Box>
+);
+
+// Pushes content below the fixed header (title row, plus the tab row when there are topics)
+const HeaderSpacer = ({ withTabs }) => (
+  <Box
+    sx={{
+      flexShrink: 0,
+      height: `calc(${look.headerHeight + (withTabs ? look.tabsHeight + 1 : 0)}px + env(safe-area-inset-top))`,
+    }}
+  />
 );
 
 const Loader = () => (

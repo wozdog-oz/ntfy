@@ -2,6 +2,7 @@ import * as React from "react";
 import { useRef, useState } from "react";
 import { Box } from "@mui/material";
 import { Trash2 } from "lucide-react";
+import { look } from "./theme";
 
 const LOCK_DISTANCE = 8; // px of movement before deciding between horizontal swipe and vertical scroll
 const DELETE_RATIO = 0.35; // fraction of the card width that must be swiped to delete on release
@@ -84,7 +85,7 @@ const SwipeToDelete = ({ onDelete, label, children }) => {
   const progress = Math.min(1, -dx / 80);
 
   return (
-    <Box sx={{ position: "relative", borderRadius: "16px", overflow: "hidden" }}>
+    <Box sx={{ position: "relative", borderRadius: `${look.radiusBox}px`, overflow: "hidden" }}>
       {dx < 0 && (
         <Box
           aria-hidden

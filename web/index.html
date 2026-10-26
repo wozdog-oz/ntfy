@@ -10,9 +10,9 @@
     <meta name="HandheldFriendly" content="true" />
 
     <!-- Mobile browsers, background color -->
-    <meta name="theme-color" content="#f9f9f9" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1c1c1e" media="(prefers-color-scheme: dark)" />
-    <meta name="msapplication-navbutton-color" content="#3a3a3c" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#161618" media="(prefers-color-scheme: dark)" />
+    <meta name="msapplication-navbutton-color" content="#554d5e" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="apple-touch-icon" href="/static/images/apple-touch-icon.png" sizes="180x180" />
     <link rel="mask-icon" href="/static/images/ntfy-mask.svg" color="#3a3a3c" />
@@ -47,14 +47,14 @@
     <link rel="manifest" href="/manifest.webmanifest" />
 
     <!-- Splash: painted before the JS bundle loads, faded out by the app once ready (see
-       src/app/splash.js). Background matches MUI's grey[100]/grey[900] for a seamless handoff. -->
+       src/app/splash.js). Background matches the theme base-100 (theme.js) for a seamless handoff. -->
     <style>
       html {
-        background-color: #f2f2f7;
+        background-color: #ffffff;
       }
 
       html.dark {
-        background-color: #000000;
+        background-color: #161618;
       }
 
       #splash {
@@ -64,14 +64,14 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: #f2f2f7;
+        background-color: #ffffff;
         opacity: 1;
         /* Background fade = the app fading in once the logo is gone (see src/app/splash.js). */
         transition: opacity 0.1s ease-out;
       }
 
       html.dark #splash {
-        background-color: #000000;
+        background-color: #161618;
       }
 
       #splash.splash-hidden {

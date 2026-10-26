@@ -35,7 +35,8 @@ import {
   CalendarX2 as DeleteOlderIcon,
 } from "lucide-react";
 import InfiniteScroll from "react-infinite-scroll-component";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import { alpha } from "@mui/material/styles";
 import { useOutletContext } from "react-router-dom";
 import {
   copyToClipboard,
@@ -45,20 +46,18 @@ import {
   openUrl,
   shortUrl,
   topicDisplayName,
-  topicUrl,
   unmatchedTags,
 } from "../app/utils";
 import { ACTION_BROADCAST, ACTION_COPY, ACTION_HTTP, ACTION_VIEW } from "../app/actions";
 import { formatMessage, formatTitle, isImage } from "../app/notificationUtils";
 import { topicColor } from "../app/topicColors";
-import { LightboxBackdrop, Paragraph, VerticallyCenteredContainer } from "./styles";
+import { LightboxBackdrop, VerticallyCenteredContainer } from "./styles";
 import subscriptionManager from "../app/SubscriptionManager";
 import notifier from "../app/Notifier";
 import priority1 from "../img/priority-1.svg";
 import priority2 from "../img/priority-2.svg";
 import priority4 from "../img/priority-4.svg";
 import priority5 from "../img/priority-5.svg";
-import logoOutline from "../img/ntfy-outline.svg";
 import AttachmentIcon from "./AttachmentIcon";
 import SwipeToDelete from "./SwipeToDelete";
 import { useAutoSubscribe } from "./hooks";
@@ -91,14 +90,19 @@ export const SingleSubscription = () => {
 
 const AllSubscriptionsList = (props) => {
   const { subscriptions, notifications } = props;
-  if (subscriptions.length === 0) {
-    return <NoSubscriptions />;
-  }
-  if (notifications.length === 0) {
-    return <NoNotificationsWithoutSubscription subscriptions={subscriptions} />;
+  // Looking at All means everything has been seen: clear every topic's unread count (and the app badge)
+  const hasNew = subscriptions.some((s) => s.new > 0);
+  useEffect(() => {
+    if (hasNew) {
+      subscriptions.filter((s) => s.new > 0).forEach((s) => subscriptionManager.markNotificationsRead(s.id));
+    }
+  }, [hasNew, subscriptions]);
+  // Custom fork: empty states are blank (no curl hints)
+  if (subscriptions.length === 0 || notifications.length === 0) {
+    return null;
   }
   const topics = Object.fromEntries(subscriptions.map((s) => [s.id, { name: topicDisplayName(s), color: topicColor(s) }]));
-  return <NotificationList key="all" notifications={notifications} messageBar={false} topics={topics} />;
+  return <NotificationList key="all" notifications={notifications} topics={topics} />;
 };
 
 const SingleSubscriptionList = (props) => {
@@ -109,10 +113,16 @@ const SingleSubscriptionList = (props) => {
     () => allNotifications.filter((notification) => notification.subscriptionId === subscription.id),
     [allNotifications, subscription.id],
   );
+  // Opening a topic tab clears that topic's unread count
+  useEffect(() => {
+    if (subscription.new > 0) {
+      subscriptionManager.markNotificationsRead(subscription.id);
+    }
+  }, [subscription.id, subscription.new]);
   if (notifications.length === 0) {
-    return <NoNotifications subscription={subscription} />;
+    return null;
   }
-  return <NotificationList id={subscription.id} notifications={notifications} messageBar />;
+  return <NotificationList id={subscription.id} notifications={notifications} />;
 };
 
 // Local calendar day of a notification timestamp (seconds), e.g. "2026-10-16"
@@ -214,7 +224,7 @@ const NotificationList = (props) => {
         aria-label={t("notifications_list")}
         sx={{
           marginTop: 1.5,
-          marginBottom: props.messageBar ? "140px" : "88px", // Hack to avoid hiding notifications behind the message bar and topic tabs
+          marginBottom: "calc(24px + env(safe-area-inset-bottom))",
           paddingLeft: { xs: 1.5, sm: 2 },
           paddingRight: { xs: 1.5, sm: 2 },
         }}
@@ -366,21 +376,29 @@ const NotificationItem = (props) => {
                 />
               )}
               {props.topic && (
+                // Neutral tag; the topic colour is only a small dot (homelab-look: colour as accent)
                 <Box
                   component="span"
                   sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 0.5,
                     fontSize: 12,
                     fontWeight: 600,
                     lineHeight: "20px",
-                    px: 1,
-                    borderRadius: "6px",
-                    color: props.topic.color?.text ?? "text.primary",
-                    backgroundColor: (theme) =>
-                      props.topic.color?.background ??
-                      (theme.palette.mode === "light" ? "rgba(120, 120, 128, 0.12)" : "rgba(120, 120, 128, 0.24)"),
+                    px: 0.75,
+                    borderRadius: "4px",
+                    color: "text.primary",
+                    backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08),
                     marginRight: 0.5,
                   }}
                 >
+                  {props.topic.color && (
+                    <Box
+                      component="span"
+                      sx={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: props.topic.color.background }}
+                    />
+                  )}
                   {props.topic.name}
                 </Box>
               )}
@@ -759,88 +777,6 @@ const UserAction = (props) => {
   }
   return null; // Others
 };
-
-const NoNotifications = (props) => {
-  const { t } = useTranslation();
-  const topicUrlResolved = topicUrl(props.subscription.baseUrl, props.subscription.topic);
-  return (
-    <VerticallyCenteredContainer maxWidth="xs">
-      <Typography variant="h5" align="center" sx={{ paddingBottom: 1 }}>
-        <img src={logoOutline} height="64" width="64" alt={t("action_bar_logo_alt")} />
-        <br />
-        {t("notifications_none_for_topic_title")}
-      </Typography>
-      <Paragraph>{t("notifications_none_for_topic_description")}</Paragraph>
-      <Paragraph>
-        {t("notifications_example")}:<br />
-        <tt>
-          {'$ curl -d "Hi" '}
-          {topicUrlResolved}
-        </tt>
-      </Paragraph>
-      <Paragraph>
-        <ForMoreDetails />
-      </Paragraph>
-    </VerticallyCenteredContainer>
-  );
-};
-
-const NoNotificationsWithoutSubscription = (props) => {
-  const { t } = useTranslation();
-  const subscription = props.subscriptions[0];
-  const topicUrlResolved = topicUrl(subscription.baseUrl, subscription.topic);
-  return (
-    <VerticallyCenteredContainer maxWidth="xs">
-      <Typography variant="h5" align="center" sx={{ paddingBottom: 1 }}>
-        <img src={logoOutline} height="64" width="64" alt={t("action_bar_logo_alt")} />
-        <br />
-        {t("notifications_none_for_any_title")}
-      </Typography>
-      <Paragraph>{t("notifications_none_for_any_description")}</Paragraph>
-      <Paragraph>
-        {t("notifications_example")}:<br />
-        <tt>
-          {'$ curl -d "Hi" '}
-          {topicUrlResolved}
-        </tt>
-      </Paragraph>
-      <Paragraph>
-        <ForMoreDetails />
-      </Paragraph>
-    </VerticallyCenteredContainer>
-  );
-};
-
-const NoSubscriptions = () => {
-  const { t } = useTranslation();
-  return (
-    <VerticallyCenteredContainer maxWidth="xs">
-      <Typography variant="h5" align="center" sx={{ paddingBottom: 1 }}>
-        <img src={logoOutline} height="64" width="64" alt={t("action_bar_logo_alt")} />
-        <br />
-        {t("notifications_no_subscriptions_title")}
-      </Typography>
-      <Paragraph>
-        {t("notifications_no_subscriptions_description", {
-          linktext: t("nav_button_subscribe"),
-        })}
-      </Paragraph>
-      <Paragraph>
-        <ForMoreDetails />
-      </Paragraph>
-    </VerticallyCenteredContainer>
-  );
-};
-
-const ForMoreDetails = () => (
-  <Trans
-    i18nKey="notifications_more_details"
-    components={{
-      websiteLink: <Link href="https://ntfy.sh" target="_blank" rel="noopener" />,
-      docsLink: <Link href="https://ntfy.sh/docs" target="_blank" rel="noopener" />,
-    }}
-  />
-);
 
 const Loading = () => {
   const { t } = useTranslation();

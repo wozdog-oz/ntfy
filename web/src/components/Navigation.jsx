@@ -223,6 +223,34 @@ const NavList = (props) => {
   );
 };
 
+// The sidebar's alerts (notification permission, browser support, new version), shown at the top
+// of the notification views now that the custom fork has no sidebar.
+export const StatusAlerts = () => {
+  const [versionChanged, setVersionChanged] = useState(false);
+  useVersionChangeListener(() => setVersionChanged(true));
+  const showNotificationPermissionRequired = useNotificationPermissionListener(() => notifier.notRequested());
+  const showNotificationPermissionDenied = useNotificationPermissionListener(() => notifier.denied());
+  const showNotificationIOSInstallRequired = notifier.iosSupportedButInstallRequired();
+  const showNotificationBrowserNotSupportedBox = !showNotificationIOSInstallRequired && !notifier.browserSupported();
+  const showNotificationContextNotSupportedBox = notifier.browserSupported() && !notifier.contextSupported();
+  const alerts = [
+    versionChanged && <VersionUpdateBanner key="version" />,
+    showNotificationPermissionRequired && <NotificationPermissionRequired key="required" />,
+    showNotificationPermissionDenied && <NotificationPermissionDeniedAlert key="denied" />,
+    showNotificationIOSInstallRequired && <NotificationIOSInstallRequiredAlert key="ios" />,
+    showNotificationBrowserNotSupportedBox && <NotificationBrowserNotSupportedAlert key="browser" />,
+    showNotificationContextNotSupportedBox && <NotificationContextNotSupportedAlert key="context" />,
+  ].filter(Boolean);
+  if (alerts.length === 0) {
+    return null;
+  }
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1, maxWidth: 900, width: "100%", mx: "auto", px: 1.5, pt: 1.5 }}>
+      {alerts}
+    </Box>
+  );
+};
+
 const UpgradeBanner = ({ mode }) => {
   const { t } = useTranslation();
   const [dialogKey, setDialogKey] = useState(0);

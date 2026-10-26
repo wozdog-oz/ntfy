@@ -1,113 +1,120 @@
 import * as React from "react";
-import { Badge, Box, Paper, Tab, Tabs } from "@mui/material";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Box, Tab, Tabs } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import routes from "./routes";
-import Navigation from "./Navigation";
 import { topicDisplayName } from "../app/utils";
 import { topicColor } from "../app/topicColors";
+import { look } from "./theme";
 
 const ALL_TAB = "all";
 
 /**
- * Floating tab bar to switch between subscribed topics, shown above the message bar on the
- * notification views. The first tab is the combined "All" view.
+ * Row of topic tabs under the header (custom fork; replaces the sidebar topic list). The first tab
+ * is the combined "All" view. Shown on every page so Settings has a way back; no tab is selected
+ * there. Tabs keep subscription order so they never move.
  */
 const TopicTabBar = (props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { subscriptions, selected } = props;
-  const onNotificationsView = ![routes.account, routes.settings].includes(location.pathname);
-  if (!onNotificationsView || !subscriptions || subscriptions.length === 0) {
+  const { subscriptions, selected, onAllView } = props;
+  if (!subscriptions || subscriptions.length === 0) {
     return null;
   }
 
-  const handleChange = (ev, value) => {
-    if (value === ALL_TAB) {
+  const totalNew = subscriptions.reduce((sum, s) => sum + s.new, 0);
+  let value = false;
+  if (selected) {
+    value = selected.id;
+  } else if (onAllView) {
+    value = ALL_TAB;
+  }
+
+  const handleChange = (ev, newValue) => {
+    if (newValue === ALL_TAB) {
       navigate(routes.app);
     } else {
-      navigate(routes.forSubscription(subscriptions.find((s) => s.id === value)));
+      navigate(routes.forSubscription(subscriptions.find((s) => s.id === newValue)));
     }
   };
 
   return (
-    <Box
-      sx={{
-        position: "fixed",
-        left: { xs: 0, sm: Navigation.width },
-        right: 0,
-        // Sit above the message bar when it is shown, and above the iOS home indicator
-        bottom: selected ? "calc(66px + env(safe-area-inset-bottom))" : "calc(12px + env(safe-area-inset-bottom))",
-        display: "flex",
-        justifyContent: "center",
-        paddingX: 1.5,
-        pointerEvents: "none",
-        zIndex: (theme) => theme.zIndex.appBar,
-      }}
-    >
-      <Paper
-        elevation={0}
+    <Box sx={{ borderTop: (theme) => `1px solid ${theme.palette.divider}`, px: { xs: 1, sm: 2 } }}>
+      <Tabs
+        value={value}
+        onChange={handleChange}
+        variant="scrollable"
+        scrollButtons={false}
+        aria-label={t("notifications_topic_tabs")}
         sx={{
-          borderRadius: 999,
-          maxWidth: "100%",
-          pointerEvents: "auto",
-          padding: 0.5,
-          backgroundColor: (theme) => (theme.palette.mode === "light" ? "rgba(249, 249, 249, 0.85)" : "rgba(44, 44, 46, 0.85)"),
-          backdropFilter: "saturate(180%) blur(20px)",
-          WebkitBackdropFilter: "saturate(180%) blur(20px)",
-          border: (theme) => `0.5px solid ${theme.palette.divider}`,
-          boxShadow: "0 4px 16px rgba(0, 0, 0, 0.12)",
+          minHeight: look.tabsHeight,
+          "& .MuiTabs-indicator": { display: "none" },
+          "& .MuiTabs-flexContainer": { gap: 0.5, alignItems: "center", height: look.tabsHeight },
         }}
       >
-        <Tabs
-          value={selected?.id ?? ALL_TAB}
-          onChange={handleChange}
-          variant="scrollable"
-          scrollButtons={false}
-          aria-label={t("notifications_topic_tabs")}
-          sx={{ minHeight: 36, "& .MuiTabs-indicator": { display: "none" } }}
-        >
-          <TopicTab value={ALL_TAB} label={t("notifications_topic_tabs_all")} />
-          {subscriptions.map((subscription) => (
-            <TopicTab
-              key={subscription.id}
-              value={subscription.id}
-              label={topicDisplayName(subscription)}
-              newCount={subscription.new}
-              color={topicColor(subscription)}
-            />
-          ))}
-        </Tabs>
-      </Paper>
+        <TopicTab value={ALL_TAB} label={t("notifications_topic_tabs_all")} newCount={totalNew} />
+        {subscriptions.map((subscription) => (
+          <TopicTab
+            key={subscription.id}
+            value={subscription.id}
+            label={topicDisplayName(subscription)}
+            newCount={subscription.new}
+            dotColor={topicColor(subscription)?.background}
+          />
+        ))}
+      </Tabs>
     </Box>
   );
 };
 
-// Selected tab is filled with the topic's colour (or the theme's accent colour)
-const TopicTab = ({ label, newCount, color, ...props }) => (
+// Selected: light grey fill and primary text (Finance Tracker's active tab). Topic colour is a small dot.
+const TopicTab = ({ label, newCount, dotColor, ...props }) => (
   <Tab
     {...props}
+    disableRipple
     label={
-      <Badge color="primary" variant="dot" invisible={!newCount}>
+      <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.75 }}>
+        {dotColor && <Box component="span" sx={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: dotColor, flexShrink: 0 }} />}
         {label}
-      </Badge>
+        {newCount > 0 && (
+          <Box
+            component="span"
+            sx={{
+              minWidth: 18,
+              height: 18,
+              px: 0.5,
+              borderRadius: `${look.radiusSelector}px`,
+              backgroundColor: "primary.main",
+              color: "primary.contrastText",
+              fontSize: 11,
+              fontWeight: 700,
+              lineHeight: "18px",
+              textAlign: "center",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {newCount > 99 ? "99+" : newCount}
+          </Box>
+        )}
+      </Box>
     }
     sx={{
-      minHeight: 36,
+      minHeight: 32,
+      height: 32,
       minWidth: 0,
-      paddingX: 1.75,
-      paddingY: 0.5,
-      borderRadius: 999,
+      px: 1.25,
+      py: 0,
+      borderRadius: `${look.radiusField}px`,
       textTransform: "none",
       fontSize: 14,
       fontWeight: 600,
       color: "text.secondary",
+      "&:hover": { color: "text.primary" },
       "&.Mui-selected": {
-        backgroundColor: color?.background ?? "primary.main",
-        color: color?.text ?? "primary.contrastText",
+        backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08), // base-content 8%, like the .tabbar active item
+        color: "primary.main",
       },
-      "&.Mui-selected .MuiBadge-dot": { backgroundColor: color?.text ?? "primary.contrastText" },
     }}
   />
 );
