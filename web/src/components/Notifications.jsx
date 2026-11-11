@@ -51,6 +51,7 @@ import {
 import { ACTION_BROADCAST, ACTION_COPY, ACTION_HTTP, ACTION_VIEW } from "../app/actions";
 import { formatMessage, formatTitle, isImage } from "../app/notificationUtils";
 import { topicColor } from "../app/topicColors";
+import { appFromTags, isAppTag } from "../app/appIcons";
 import { LightboxBackdrop, VerticallyCenteredContainer } from "./styles";
 import subscriptionManager from "../app/SubscriptionManager";
 import notifier from "../app/Notifier";
@@ -337,7 +338,8 @@ const NotificationItem = (props) => {
   const { notification } = props;
   const { attachment } = notification;
   const date = formatDateTime(notification.time, dateFormat, timeFormat);
-  const otherTags = unmatchedTags(notification.tags);
+  const otherTags = unmatchedTags(notification.tags).filter((tag) => !isAppTag(tag));
+  const app = appFromTags(notification.tags);
   const tags = otherTags.length > 0 ? otherTags.join(", ") : null;
   const handleDelete = async () => {
     console.log(`[Notifications] Deleting notification ${notification.id}`);
@@ -365,110 +367,122 @@ const NotificationItem = (props) => {
   return (
     <SwipeToDelete onDelete={handleDelete} label={t("notifications_delete")}>
       <Card role="listitem" aria-label={t("notifications_list_item")}>
-        <CardContent>
-          <Box sx={{ display: "flex", alignItems: "center", marginTop: -0.5 }}>
-            <Typography sx={{ fontSize: 13, flexGrow: 1, display: "flex", alignItems: "center", gap: 0.5, color: "text.secondary" }}>
-              {notification.new === 1 && (
-                <Box
-                  component="span"
-                  aria-label={t("notifications_new_indicator")}
-                  sx={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: "primary.main", flexShrink: 0, marginRight: 0.25 }}
-                />
-              )}
-              {props.topic && (
-                // Neutral tag; the topic colour is only a small dot (homelab-look: colour as accent)
-                <Box
-                  component="span"
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 0.5,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    lineHeight: "20px",
-                    px: 0.75,
-                    borderRadius: "4px",
-                    color: "text.primary",
-                    backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08),
-                    marginRight: 0.5,
-                  }}
-                >
-                  {props.topic.color && (
-                    <Box
-                      component="span"
-                      sx={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: props.topic.color.background }}
-                    />
-                  )}
-                  {props.topic.name}
-                </Box>
-              )}
-              {date}
-              {[1, 2, 4, 5].includes(notification.priority) && (
-                <img
-                  src={priorityFiles[notification.priority]}
-                  alt={t("notifications_priority_x", {
-                    priority: notification.priority,
-                  })}
-                  style={{ height: 20 }}
-                />
-              )}
-            </Typography>
-            <IconButton
-              onClick={(ev) => setMenuAnchorEl(ev.currentTarget)}
-              sx={{ marginRight: -1, color: "text.secondary" }}
-              aria-label={t("action_bar_toggle_action_menu")}
-            >
-              <MoreVertIcon size={20} />
-            </IconButton>
-            <Menu
-              anchorEl={menuAnchorEl}
-              open={Boolean(menuAnchorEl)}
-              onClose={() => setMenuAnchorEl(null)}
-              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-              transformOrigin={{ vertical: "top", horizontal: "right" }}
-            >
-              {notification.new === 1 && (
-                <MenuItem onClick={handleMenuAction(handleMarkRead)}>
+        <CardContent sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
+          {app && (
+            // Sender icon (app-<key> tag); rounded square like an iOS app icon
+            <Box
+              component="img"
+              src={app.icon}
+              alt={app.name}
+              title={app.name}
+              sx={{ width: 40, height: 40, borderRadius: "10px", flexShrink: 0, marginTop: 0.25, objectFit: "cover" }}
+            />
+          )}
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Box sx={{ display: "flex", alignItems: "center", marginTop: -0.5 }}>
+              <Typography sx={{ fontSize: 13, flexGrow: 1, display: "flex", alignItems: "center", gap: 0.5, color: "text.secondary" }}>
+                {notification.new === 1 && (
+                  <Box
+                    component="span"
+                    aria-label={t("notifications_new_indicator")}
+                    sx={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: "primary.main", flexShrink: 0, marginRight: 0.25 }}
+                  />
+                )}
+                {props.topic && (
+                  // Neutral tag; the topic colour is only a small dot (homelab-look: colour as accent)
+                  <Box
+                    component="span"
+                    sx={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 0.5,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      lineHeight: "20px",
+                      px: 0.75,
+                      borderRadius: "4px",
+                      color: "text.primary",
+                      backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08),
+                      marginRight: 0.5,
+                    }}
+                  >
+                    {props.topic.color && (
+                      <Box
+                        component="span"
+                        sx={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: props.topic.color.background }}
+                      />
+                    )}
+                    {props.topic.name}
+                  </Box>
+                )}
+                {date}
+                {[1, 2, 4, 5].includes(notification.priority) && (
+                  <img
+                    src={priorityFiles[notification.priority]}
+                    alt={t("notifications_priority_x", {
+                      priority: notification.priority,
+                    })}
+                    style={{ height: 20 }}
+                  />
+                )}
+              </Typography>
+              <IconButton
+                onClick={(ev) => setMenuAnchorEl(ev.currentTarget)}
+                sx={{ marginRight: -1, color: "text.secondary" }}
+                aria-label={t("action_bar_toggle_action_menu")}
+              >
+                <MoreVertIcon size={20} />
+              </IconButton>
+              <Menu
+                anchorEl={menuAnchorEl}
+                open={Boolean(menuAnchorEl)}
+                onClose={() => setMenuAnchorEl(null)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+              >
+                {notification.new === 1 && (
+                  <MenuItem onClick={handleMenuAction(handleMarkRead)}>
+                    <ListItemIcon>
+                      <CheckIcon size={18} />
+                    </ListItemIcon>
+                    {t("notifications_mark_read")}
+                  </MenuItem>
+                )}
+                <MenuItem onClick={handleMenuAction(() => handleCopy(formatMessage(notification)))}>
                   <ListItemIcon>
-                    <CheckIcon size={18} />
+                    <CopyIcon size={18} />
                   </ListItemIcon>
-                  {t("notifications_mark_read")}
+                  {t("common_copy_to_clipboard")}
                 </MenuItem>
-              )}
-              <MenuItem onClick={handleMenuAction(() => handleCopy(formatMessage(notification)))}>
-                <ListItemIcon>
-                  <CopyIcon size={18} />
-                </ListItemIcon>
-                {t("common_copy_to_clipboard")}
-              </MenuItem>
-              <MenuItem onClick={handleMenuAction(handleDelete)} sx={{ color: "error.main" }}>
-                <ListItemIcon sx={{ color: "error.main" }}>
-                  <DeleteIcon size={18} />
-                </ListItemIcon>
-                {t("notifications_delete")}
-              </MenuItem>
-            </Menu>
+                <MenuItem onClick={handleMenuAction(handleDelete)} sx={{ color: "error.main" }}>
+                  <ListItemIcon sx={{ color: "error.main" }}>
+                    <DeleteIcon size={18} />
+                  </ListItemIcon>
+                  {t("notifications_delete")}
+                </MenuItem>
+              </Menu>
+            </Box>
+            {notification.title && (
+              <Typography
+                variant="h5"
+                component="div"
+                role="rowheader"
+                sx={{ fontSize: "1rem", lineHeight: 1.35, marginTop: 0.25, marginBottom: 0.25 }}
+              >
+                {formatTitle(notification)}
+              </Typography>
+            )}
+            <Typography variant="body1" sx={{ fontSize: "0.9375rem", lineHeight: 1.4, whiteSpace: "pre-line", overflowX: "auto" }}>
+              <NotificationBody notification={notification} />
+              {maybeActionErrors(notification)}
+            </Typography>
+            {attachment && <Attachment attachment={attachment} />}
+            {tags && (
+              <Typography sx={{ fontSize: 13, color: "text.secondary", marginTop: 0.5 }}>
+                {t("notifications_tags")}: {tags}
+              </Typography>
+            )}
           </Box>
-          {notification.title && (
-            <Typography
-              variant="h5"
-              component="div"
-              role="rowheader"
-              sx={{ fontSize: "1rem", lineHeight: 1.35, marginTop: 0.25, marginBottom: 0.25 }}
-            >
-              {formatTitle(notification)}
-            </Typography>
-          )}
-          <Typography variant="body1" sx={{ fontSize: "0.9375rem", lineHeight: 1.4, whiteSpace: "pre-line", overflowX: "auto" }}>
-            <NotificationBody notification={notification} />
-            {maybeActionErrors(notification)}
-          </Typography>
-          {attachment && <Attachment attachment={attachment} />}
-          {tags && (
-            <Typography sx={{ fontSize: 13, color: "text.secondary", marginTop: 0.5 }}>
-              {t("notifications_tags")}: {tags}
-            </Typography>
-          )}
         </CardContent>
         {showActions && (
           <CardActions sx={{ paddingTop: 0 }}>
